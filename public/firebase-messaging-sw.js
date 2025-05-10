@@ -5,17 +5,24 @@ importScripts(
   "https://www.gstatic.com/firebasejs/11.4.0/firebase-messaging-compat.js"
 );
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.env) {
+    self.env = event.data.env;
+  }
+});
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDKT7gynC_JqjGpZjaFZkLhH5m2-yrNHjk",
-  authDomain: "test-skripsi-3c259.firebaseapp.com",
-  projectId: "test-skripsi-3c259",
-  storageBucket: "test-skripsi-3c259.appspot.com",
-  messagingSenderId: "568182643466",
-  appId: "1:568182643466:web:67261c7b13de6ab0a2b8f3",
+  apiKey: self.env?.VITE_FIREBASE_API_KEY || '',
+  authDomain: self.env?.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: self.env?.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: self.env?.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: self.env?.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: self.env?.VITE_FIREBASE_APP_ID || '',
 };
 
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
+
 
 messaging.onBackgroundMessage((payload) => {
   console.log(
