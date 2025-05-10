@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -48,6 +48,40 @@ export default function CheckoutPage() {
   const shipping = 50000;
   const total = subtotal + shipping;
 
+  useEffect(() => {
+    const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
+    const clientKey =
+      import.meta.env.VITE_CLIENT || "SB-Mid-client-M1nENuqliMG9c6jx"; // Fallback for missing env
+
+    // Check if the script is already loaded
+    if (!document.querySelector(`script[src="${snapScript}"]`)) {
+      const script = document.createElement("script");
+      script.src = snapScript;
+      script.setAttribute("data-client-key", clientKey);
+      script.async = true;
+
+      // Set a callback when the script is loaded
+      script.onload = () => {
+        console.log("Midtrans Snap script loaded");
+        // setScriptLoaded(true);
+      };
+
+      // Handle script loading errors
+      script.onerror = () => {
+        console.error("Failed to load Midtrans Snap script");
+      };
+
+      document.body.appendChild(script);
+
+      return () => {
+        document.body.removeChild(script);
+      };
+    } else {
+      // If the script is already loaded, set the state to true
+      // setScriptLoaded(true);
+    }
+  }, []);
+
   const onSubmit = async (data: CheckoutFormData) => {
     if (items.length === 0) {
       toast.error("Your cart is empty");
@@ -56,26 +90,71 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
     try {
+      // 1. Prepare order data
       const orderData = {
-        ...data,
-        items,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        city: data.city,
+        zip: data.zip,
+        notes: data.notes,
+        items: items.map((item) => ({
+          id: item.id,
+          productName: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
         subtotal,
         shipping,
         total,
       };
+      console.log("Orders Data: ", orderData);
+      // 2. Add authentication header
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("You are not authenticated. Please login first.");
+        return;
+      }
+      const response = await axiosInstance.post(
+        "/orders/create-transaction",
+        orderData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`, // Or your auth token
+          },
+        }
+      );
+      console.log("Response: ", response);
 
-      const response = await axiosInstance.post("/orders", orderData);
-      
-      // Clear cart on successful order
-      clearCart();
-      
-      toast.success("Order placed successfully!");
-      navigate("/checkout/success", {
-        state: { orderId: response.data.id },
-      });
+      // 3. Handle payment
+      if (window.snap) {
+        window.snap.pay(response.data.token, {
+          onSuccess: (result) => {
+            clearCart();
+            navigate("/checkout/success", {
+              state: { orderId: result.order_id },
+            });
+          },
+          onError: (error) => {
+            toast.error(`Payment failed: ${error.message}`);
+          },
+          onClose: () => {
+            toast("Payment window was closed");
+          },
+        });
+      } else {
+        throw new Error("Payment gateway not loaded");
+      }
     } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error("Failed to place order. Please try again.");
+      if (error.response?.data?.message?.includes("not found")) {
+        // Refresh product list or clear cart
+        toast.error("Some products are no longer available");
+        // Consider: fetchProducts(); or clearCart();
+      } else {
+        toast.error(error.response?.data?.message || "Checkout failed");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -120,11 +199,16 @@ export default function CheckoutPage() {
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
             {/* Shipping Information */}
             <div className="bg-white rounded-lg border shadow-sm p-4 md:p-6">
-              <h2 className="text-xl font-semibold mb-4">Shipping Information</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                Shipping Information
+              </h2>
               <div className="grid gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="firstName"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       First Name
                     </label>
                     <input
@@ -137,11 +221,16 @@ export default function CheckoutPage() {
                       {...register("firstName")}
                     />
                     {errors.firstName && (
-                      <p className="text-red-500 text-xs">{errors.firstName.message}</p>
+                      <p className="text-red-500 text-xs">
+                        {errors.firstName.message}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="lastName"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Last Name
                     </label>
                     <input
@@ -154,12 +243,17 @@ export default function CheckoutPage() {
                       {...register("lastName")}
                     />
                     {errors.lastName && (
-                      <p className="text-red-500 text-xs">{errors.lastName.message}</p>
+                      <p className="text-red-500 text-xs">
+                        {errors.lastName.message}
+                      </p>
                     )}
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Email
                   </label>
                   <input
@@ -172,11 +266,16 @@ export default function CheckoutPage() {
                     {...register("email")}
                   />
                   {errors.email && (
-                    <p className="text-red-500 text-xs">{errors.email.message}</p>
+                    <p className="text-red-500 text-xs">
+                      {errors.email.message}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Phone
                   </label>
                   <input
@@ -189,11 +288,16 @@ export default function CheckoutPage() {
                     {...register("phone")}
                   />
                   {errors.phone && (
-                    <p className="text-red-500 text-xs">{errors.phone.message}</p>
+                    <p className="text-red-500 text-xs">
+                      {errors.phone.message}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="address"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Address
                   </label>
                   <input
@@ -206,11 +310,16 @@ export default function CheckoutPage() {
                     {...register("address")}
                   />
                   {errors.address && (
-                    <p className="text-red-500 text-xs">{errors.address.message}</p>
+                    <p className="text-red-500 text-xs">
+                      {errors.address.message}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="address2" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="address2"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Apartment, suite, etc. (optional)
                   </label>
                   <input
@@ -223,7 +332,10 @@ export default function CheckoutPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="city"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       City
                     </label>
                     <input
@@ -236,11 +348,16 @@ export default function CheckoutPage() {
                       {...register("city")}
                     />
                     {errors.city && (
-                      <p className="text-red-500 text-xs">{errors.city.message}</p>
+                      <p className="text-red-500 text-xs">
+                        {errors.city.message}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="zip" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="zip"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       ZIP Code
                     </label>
                     <input
@@ -253,7 +370,9 @@ export default function CheckoutPage() {
                       {...register("zip")}
                     />
                     {errors.zip && (
-                      <p className="text-red-500 text-xs">{errors.zip.message}</p>
+                      <p className="text-red-500 text-xs">
+                        {errors.zip.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -262,9 +381,14 @@ export default function CheckoutPage() {
 
             {/* Order Notes */}
             <div className="bg-white rounded-lg border shadow-sm p-4 md:p-6">
-              <h2 className="text-xl font-semibold mb-4">Order Notes (Optional)</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                Order Notes (Optional)
+              </h2>
               <div className="space-y-2">
-                <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="notes"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Notes
                 </label>
                 <textarea
@@ -305,7 +429,9 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium truncate">{item.name}</h4>
+                          <h4 className="text-sm font-medium truncate">
+                            {item.name}
+                          </h4>
                           <p className="text-sm text-gray-500">
                             {formatPrice(item.price)} x {item.quantity}
                           </p>
