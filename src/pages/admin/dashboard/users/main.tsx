@@ -1,99 +1,116 @@
-import { useState } from "react"
-import { DashboardHeader } from "@/pages/admin/dashboard/components/header"
-import { DashboardShell } from "@/pages/admin/dashboard/components/shell"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { UserTable } from "@/pages/admin/dashboard/users/components/user-table"
-import { UserCreateDialog } from "@/pages/admin/dashboard/users/components/user-create-dialog"
-import { PlusCircle } from "lucide-react"
+import { useState, useEffect } from "react";
+import { DashboardHeader } from "@/pages/admin/dashboard/components/header";
+import { DashboardShell } from "@/pages/admin/dashboard/components/shell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { UserTable } from "@/pages/admin/dashboard/users/components/user-table";
+import { UserCreateDialog } from "@/pages/admin/dashboard/users/components/user-create-dialog";
+import { PlusCircle } from "lucide-react";
+import axiosInstance from "@/api/axiosInstance";
 
-// Mock data for users
-const initialUsers = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    role: "Admin",
-    status: "Active",
-    lastActive: "2023-03-22T10:30:00Z",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    role: "Editor",
-    status: "Active",
-    lastActive: "2023-03-21T14:20:00Z",
-  },
-  {
-    id: "3",
-    name: "Bob Johnson",
-    email: "bob@example.com",
-    role: "Viewer",
-    status: "Inactive",
-    lastActive: "2023-03-15T09:45:00Z",
-  },
-  {
-    id: "4",
-    name: "Alice Williams",
-    email: "alice@example.com",
-    role: "Editor",
-    status: "Active",
-    lastActive: "2023-03-20T16:15:00Z",
-  },
-  {
-    id: "5",
-    name: "Charlie Brown",
-    email: "charlie@example.com",
-    role: "Viewer",
-    status: "Active",
-    lastActive: "2023-03-19T11:30:00Z",
-  },
-]
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  lastActive: string;
+}
 
 export default function UsersPage() {
-  const [users, setUsers] = useState(initialUsers)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axiosInstance.get("/users");
+
+        // Extract user array correctly
+        const usersData = Array.isArray(response.data.data)
+          ? response.data.data
+          : [];
+
+        setUsers(usersData);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+        setError("Failed to load users. Please try again later.");
+        setUsers([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   // Filter users based on search query
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+      user.role.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Create a new user
-  const handleCreateUser = (userData: Omit<(typeof users)[0], "id" | "lastActive">) => {
-    const newUser = {
-      ...userData,
-      id: (users.length + 1).toString(),
-      lastActive: new Date().toISOString(),
+  const handleCreateUser = async (
+    userData: Omit<User, "id" | "lastActive">
+  ) => {
+    try {
+      const response = await axiosInstance.post("/users", userData);
+      setUsers([...users, response.data]);
+      setIsCreateDialogOpen(false);
+    } catch (err) {
+      console.error("Failed to create user:", err);
+      setError("Failed to create user. Please try again.");
     }
-    setUsers([...users, newUser])
-    setIsCreateDialogOpen(false)
-  }
+  };
 
   // Update a user
-  const handleUpdateUser = (id: string, userData: Partial<(typeof users)[0]>) => {
-    setUsers(users.map((user) => (user.id === id ? { ...user, ...userData } : user)))
-  }
+  const handleUpdateUser = async (id: string, userData: Partial<User>) => {
+    try {
+      const response = await axiosInstance.patch(`/users/${id}`, userData);
+      setUsers(users.map((user) => (user.id === id ? response.data : user)));
+    } catch (err) {
+      console.error("Failed to update user:", err);
+      setError("Failed to update user. Please try again.");
+    }
+  };
 
   // Delete a user
-  const handleDeleteUser = (id: string) => {
-    setUsers(users.filter((user) => user.id !== id))
-  }
+  const handleDeleteUser = async (id: string) => {
+    try {
+      await axiosInstance.delete(`/users/${id}`);
+      setUsers(users.filter((user) => user.id !== id));
+    } catch (err) {
+      console.error("Failed to delete user:", err);
+      setError("Failed to delete user. Please try again.");
+    }
+  };
 
   return (
     <DashboardShell>
-      <DashboardHeader heading="User Management" text="Create and manage user accounts">
+      <DashboardHeader
+        heading="User Management"
+        text="Create and manage user accounts"
+      >
         <Button onClick={() => setIsCreateDialogOpen(true)}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add User
         </Button>
       </DashboardHeader>
       <div className="space-y-4">
+        {error && (
+          <div className="rounded-md bg-red-50 p-4">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div className="w-full max-w-sm">
             <Input
@@ -104,10 +121,23 @@ export default function UsersPage() {
             />
           </div>
         </div>
-        <UserTable users={filteredUsers} onUpdate={handleUpdateUser} onDelete={handleDeleteUser} />
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <p>Loading users...</p>
+          </div>
+        ) : (
+          <UserTable
+            users={filteredUsers}
+            onUpdate={handleUpdateUser}
+            onDelete={handleDeleteUser}
+          />
+        )}
       </div>
-      <UserCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} onSubmit={handleCreateUser} />
+      <UserCreateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSubmit={handleCreateUser}
+      />
     </DashboardShell>
-  )
+  );
 }
-

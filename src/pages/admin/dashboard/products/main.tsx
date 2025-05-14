@@ -1,147 +1,137 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlusCircle } from "lucide-react";
-
+import axiosInstance from "@/api/axiosInstance";
 import { DashboardHeader } from "@/pages/admin/dashboard/components/header";
 import { DashboardShell } from "@/pages/admin/dashboard/components/shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProductTable } from "@/pages/admin/dashboard/products/components/product-table";
 import { ProductCreateDialog } from "@/pages/admin/dashboard/products/components/product-create-dialog";
+import toast from "react-hot-toast";
 
-// Mock data for products
-const initialProducts = [
-  {
-    id: "1",
-    name: "Wireless Headphones",
-    slug: "wireless-headphones",
-    description: "Premium wireless headphones with noise cancellation",
-    price: 149.99,
-    category: "Electronics",
-    inventory: 45,
-    image: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: "2",
-    name: "Smart Watch",
-    slug: "smart-watch",
-    description: "Fitness tracker and smartwatch with heart rate monitoring",
-    price: 199.99,
-    category: "Electronics",
-    inventory: 32,
-    image: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: "3",
-    name: "Cotton T-Shirt",
-    slug: "cotton-t-shirt",
-    description: "Comfortable cotton t-shirt in various colors",
-    price: 24.99,
-    category: "Clothing",
-    inventory: 120,
-    image: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: "4",
-    name: "Coffee Maker",
-    slug: "coffee-maker",
-    description: "Programmable coffee maker with thermal carafe",
-    price: 89.99,
-    category: "Home & Kitchen",
-    inventory: 18,
-    image: "/placeholder.svg?height=200&width=200",
-  },
-  {
-    id: "5",
-    name: "Yoga Mat",
-    slug: "yoga-mat",
-    description: "Non-slip yoga mat with carrying strap",
-    price: 29.99,
-    category: "Sports & Outdoors",
-    inventory: 65,
-    image: "/placeholder.svg?height=200&width=200",
-  },
-];
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  quantity: number;
+  image: string;
+  category: {
+    id: string;
+    name: string;
+  };
+}
 
-// Mock data for categories (for dropdown selection)
-const categories = [
-  { id: "1", name: "Electronics" },
-  { id: "2", name: "Clothing" },
-  { id: "3", name: "Home & Kitchen" },
-  { id: "4", name: "Books" },
-  { id: "5", name: "Sports & Outdoors" },
-];
+interface Category {
+  id: string;
+  name: string;
+}
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Filter products based on search query
-  const filteredProducts = products.filter(
-    (product) =>
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [productsRes, categoriesRes] = await Promise.all([
+          axiosInstance.get("/product"),
+          axiosInstance.get("/category")
+        ]);
 
-  // Create a new product
-  const handleCreateProduct = (
-    productData: Omit<(typeof products)[0], "id">
-  ) => {
-    const newProduct = {
-      ...productData,
-      id: (products.length + 1).toString(),
+        setProducts(productsRes.data.map((p: any) => ({
+          ...p,
+          category: p.category
+        })));
+        setCategories(categoriesRes.data);
+      } catch (err) {
+        toast.error("Gagal memuat data");
+      } finally {
+        setIsLoading(false);
+      }
     };
-    setProducts([...products, newProduct]);
-    setIsCreateDialogOpen(false);
+    fetchData();
+  }, []);
+
+  const handleCreateProduct = async (data: Omit<Product, "id">) => {
+    try {
+      const res = await axiosInstance.post("/product", {
+        ...data,
+        categoryId: data.category.id
+      });
+      
+      setProducts([...products, res.data]);
+      toast.success("Produk berhasil dibuat");
+      setIsCreateDialogOpen(false);
+    } catch (err) {
+      toast.error("Gagal membuat produk");
+    }
   };
 
-  // Update a product
-  const handleUpdateProduct = (
-    id: string,
-    productData: Partial<(typeof products)[0]>
-  ) => {
-    setProducts(
-      products.map((product) =>
-        product.id === id ? { ...product, ...productData } : product
-      )
-    );
+  const handleUpdateProduct = async (id: string, data: Partial<Product>) => {
+    try {
+      await axiosInstance.patch(`/product/${id}`, data);
+      setProducts(products.map(p => p.id === id ? {...p, ...data} : p));
+      toast.success("Produk berhasil diupdate");
+    } catch (err) {
+      toast.error("Gagal mengupdate produk");
+    }
   };
 
-  // Delete a product
-  const handleDeleteProduct = (id: string) => {
-    setProducts(products.filter((product) => product.id !== id));
+  const handleDeleteProduct = async (id: string) => {
+    try {
+      await axiosInstance.delete(`/product/${id}`);
+      setProducts(products.filter(p => p.id !== id));
+      toast.success("Produk berhasil dihapus");
+    } catch (err) {
+      toast.error("Gagal menghapus produk");
+    }
   };
+
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.category.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <DashboardShell>
-      <DashboardHeader
-        heading="Product Management"
-        text="Create and manage products"
-      >
+      <DashboardHeader heading="Kelola Produk" text="Kelola produk toko Anda">
         <Button onClick={() => setIsCreateDialogOpen(true)}>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add Product
+          Tambah Produk
         </Button>
       </DashboardHeader>
+      
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="w-full max-w-sm">
-            <Input
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9"
-            />
-          </div>
+        <div className="w-full max-w-sm">
+          <Input
+            placeholder="Cari produk..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        <ProductTable
-          products={filteredProducts}
-          categories={categories}
-          onUpdate={handleUpdateProduct}
-          onDelete={handleDeleteProduct}
-        />
+
+        {isLoading ? (
+          <div className="text-center py-8">Memuat produk...</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-8">
+            {products.length === 0 ? "Belum ada produk" : "Hasil pencarian tidak ditemukan"}
+          </div>
+        ) : (
+          <ProductTable
+            products={filteredProducts}
+            categories={categories}
+            onUpdate={handleUpdateProduct}
+            onDelete={handleDeleteProduct}
+          />
+        )}
       </div>
+
       <ProductCreateDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}

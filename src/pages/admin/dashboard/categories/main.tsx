@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlusCircle } from "lucide-react";
+import axiosInstance from "@/api/axiosInstance";
 
 import { DashboardHeader } from "@/pages/admin/dashboard/components/header";
 import { DashboardShell } from "@/pages/admin/dashboard/components/shell";
@@ -8,49 +9,40 @@ import { Input } from "@/components/ui/input";
 import { CategoryTable } from "@/pages/admin/dashboard/categories/components/category-table";
 import { CategoryCreateDialog } from "@/pages/admin/dashboard/categories/components/category-create-dialog";
 
-// Mock data for categories
-const initialCategories = [
-  {
-    id: "1",
-    name: "Electronics",
-    slug: "electronics",
-    description: "Electronic devices and gadgets",
-    productCount: 42,
-  },
-  {
-    id: "2",
-    name: "Clothing",
-    slug: "clothing",
-    description: "Apparel and fashion items",
-    productCount: 56,
-  },
-  {
-    id: "3",
-    name: "Home & Kitchen",
-    slug: "home-kitchen",
-    description: "Home appliances and kitchen essentials",
-    productCount: 38,
-  },
-  {
-    id: "4",
-    name: "Books",
-    slug: "books",
-    description: "Books, e-books, and audiobooks",
-    productCount: 120,
-  },
-  {
-    id: "5",
-    name: "Sports & Outdoors",
-    slug: "sports-outdoors",
-    description: "Sports equipment and outdoor gear",
-    productCount: 35,
-  },
-];
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  productCount: number;
+}
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState(initialCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axiosInstance.get("/category");
+        setCategories(response.data);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+        setError("Failed to load categories. Please try again later.");
+        setCategories([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Filter categories based on search query
   const filteredCategories = categories.filter(
@@ -60,33 +52,46 @@ export default function CategoriesPage() {
   );
 
   // Create a new category
-  const handleCreateCategory = (
-    categoryData: Omit<(typeof categories)[0], "id" | "productCount">
+  const handleCreateCategory = async (
+    categoryData: Omit<Category, "id" | "productCount">
   ) => {
-    const newCategory = {
-      ...categoryData,
-      id: (categories.length + 1).toString(),
-      productCount: 0,
-    };
-    setCategories([...categories, newCategory]);
-    setIsCreateDialogOpen(false);
+    try {
+      const response = await axiosInstance.post("/category", categoryData);
+      setCategories([...categories, response.data.data || response.data]);
+      setIsCreateDialogOpen(false);
+    } catch (err) {
+      console.error("Failed to create category:", err);
+      setError("Failed to create category. Please try again.");
+    }
   };
 
   // Update a category
-  const handleUpdateCategory = (
+  const handleUpdateCategory = async (
     id: string,
-    categoryData: Partial<(typeof categories)[0]>
+    categoryData: Partial<Category>
   ) => {
-    setCategories(
-      categories.map((category) =>
-        category.id === id ? { ...category, ...categoryData } : category
-      )
-    );
+    try {
+      const response = await axiosInstance.patch(`/category/${id}`, categoryData);
+      setCategories(
+        categories.map((category) =>
+          category.id === id ? (response.data.data || response.data) : category
+        )
+      );
+    } catch (err) {
+      console.error("Failed to update category:", err);
+      setError("Failed to update category. Please try again.");
+    }
   };
 
   // Delete a category
-  const handleDeleteCategory = (id: string) => {
-    setCategories(categories.filter((category) => category.id !== id));
+  const handleDeleteCategory = async (id: string) => {
+    try {
+      await axiosInstance.delete(`/category/${id}`);
+      setCategories(categories.filter((category) => category.id !== id));
+    } catch (err) {
+      console.error("Failed to delete category:", err);
+      setError("Failed to delete category. Please try again.");
+    }
   };
 
   return (
@@ -101,6 +106,11 @@ export default function CategoriesPage() {
         </Button>
       </DashboardHeader>
       <div className="space-y-4">
+        {error && (
+          <div className="rounded-md bg-red-50 p-4">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <div className="w-full max-w-sm">
             <Input
@@ -111,11 +121,17 @@ export default function CategoriesPage() {
             />
           </div>
         </div>
-        <CategoryTable
-          categories={filteredCategories}
-          onUpdate={handleUpdateCategory}
-          onDelete={handleDeleteCategory}
-        />
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <p>Loading categories...</p>
+          </div>
+        ) : (
+          <CategoryTable
+            categories={filteredCategories}
+            onUpdate={handleUpdateCategory}
+            onDelete={handleDeleteCategory}
+          />
+        )}
       </div>
       <CategoryCreateDialog
         open={isCreateDialogOpen}
