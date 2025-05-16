@@ -12,9 +12,11 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
-  status: string;
-  lastActive: string;
+  role: "ADMIN" | "USER";
+  resetToken: string | null;
+  resetTokenExpiry: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function UsersPage() {
@@ -26,29 +28,29 @@ export default function UsersPage() {
 
   // Fetch users from API
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axiosInstance.get("/users");
-
-        // Extract user array correctly
-        const usersData = Array.isArray(response.data.data)
-          ? response.data.data
-          : [];
-
-        setUsers(usersData);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to fetch users:", err);
-        setError("Failed to load users. Please try again later.");
-        setUsers([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.get("/users");
+
+      // Pastikan respons memiliki data pengguna yang benar
+      const usersData = Array.isArray(response.data.data)
+        ? response.data.data
+        : [];
+
+      setUsers(usersData);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+      setError("Failed to load users. Please try again later.");
+      setUsers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Filter users based on search query
   const filteredUsers = users.filter(
@@ -59,12 +61,15 @@ export default function UsersPage() {
   );
 
   // Create a new user
-  const handleCreateUser = async (
-    userData: Omit<User, "id" | "lastActive">
-  ) => {
+  const handleCreateUser = async (userData: {
+    name: string;
+    email: string;
+    role: "ADMIN" | "USER";
+    password: string;
+  }) => {
     try {
-      const response = await axiosInstance.post("/users", userData);
-      setUsers([...users, response.data]);
+      await axiosInstance.post("/users", userData);
+      fetchUsers();
       setIsCreateDialogOpen(false);
     } catch (err) {
       console.error("Failed to create user:", err);
@@ -75,8 +80,8 @@ export default function UsersPage() {
   // Update a user
   const handleUpdateUser = async (id: string, userData: Partial<User>) => {
     try {
-      const response = await axiosInstance.patch(`/users/${id}`, userData);
-      setUsers(users.map((user) => (user.id === id ? response.data : user)));
+      await axiosInstance.patch(`/users/${id}`, userData);
+      fetchUsers();
     } catch (err) {
       console.error("Failed to update user:", err);
       setError("Failed to update user. Please try again.");
@@ -87,7 +92,7 @@ export default function UsersPage() {
   const handleDeleteUser = async (id: string) => {
     try {
       await axiosInstance.delete(`/users/${id}`);
-      setUsers(users.filter((user) => user.id !== id));
+      fetchUsers();
     } catch (err) {
       console.error("Failed to delete user:", err);
       setError("Failed to delete user. Please try again.");

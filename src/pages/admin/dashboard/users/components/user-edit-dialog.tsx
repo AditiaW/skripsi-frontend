@@ -32,8 +32,7 @@ import {
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
-  role: z.string().min(1, "Please select a role"),
-  status: z.string().min(1, "Please select a status"),
+  role: z.enum(["ADMIN", "USER"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -42,9 +41,11 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
-  status: string;
-  lastActive: string;
+  role: "ADMIN" | "USER";
+  resetToken: string | null;
+  resetTokenExpiry: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface UserEditDialogProps {
@@ -68,7 +69,6 @@ export function UserEditDialog({
       name: user.name,
       email: user.email,
       role: user.role,
-      status: user.status,
     },
   });
 
@@ -137,33 +137,8 @@ export function UserEditDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                      <SelectItem value="Editor">Editor</SelectItem>
-                      <SelectItem value="Viewer">Viewer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
+                      <SelectItem value="ADMIN">Admin</SelectItem>
+                      <SelectItem value="USER">User</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

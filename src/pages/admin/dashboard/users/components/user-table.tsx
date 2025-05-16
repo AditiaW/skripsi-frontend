@@ -35,9 +35,11 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
-  status: string;
-  lastActive: string;
+  role: "ADMIN" | "USER";
+  resetToken: string | null;
+  resetTokenExpiry: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface UserTableProps {
@@ -75,7 +77,17 @@ export function UserTable({ users, onUpdate, onDelete }: UserTableProps) {
       year: "numeric",
       month: "short",
       day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
+  };
+
+  const getRoleBadge = (role: "ADMIN" | "USER") => {
+    return (
+      <Badge variant={role === "ADMIN" ? "default" : "secondary"}>
+        {role}
+      </Badge>
+    );
   };
 
   return (
@@ -87,10 +99,8 @@ export function UserTable({ users, onUpdate, onDelete }: UserTableProps) {
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead className="hidden md:table-cell">Role</TableHead>
-              <TableHead className="hidden md:table-cell">Status</TableHead>
-              <TableHead className="hidden md:table-cell">
-                Last Active
-              </TableHead>
+              <TableHead className="hidden md:table-cell">Created At</TableHead>
+              <TableHead className="hidden md:table-cell">Updated At</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -107,19 +117,13 @@ export function UserTable({ users, onUpdate, onDelete }: UserTableProps) {
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {user.role}
+                    {getRoleBadge(user.role)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    <Badge
-                      variant={
-                        user.status === "Active" ? "default" : "secondary"
-                      }
-                    >
-                      {user.status}
-                    </Badge>
+                    {formatDate(user.createdAt)}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {formatDate(user.lastActive)}
+                    {formatDate(user.updatedAt)}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -181,7 +185,7 @@ export function UserTable({ users, onUpdate, onDelete }: UserTableProps) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground"
+              className="bg-destructive text-white"
             >
               Delete
             </AlertDialogAction>
