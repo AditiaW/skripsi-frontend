@@ -12,9 +12,8 @@ import { CategoryCreateDialog } from "@/pages/admin/dashboard/categories/compone
 interface Category {
   id: string;
   name: string;
-  slug: string;
-  description: string;
-  productCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function CategoriesPage() {
@@ -45,16 +44,12 @@ export default function CategoriesPage() {
   }, []);
 
   // Filter categories based on search query
-  const filteredCategories = categories.filter(
-    (category) =>
-      category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      category.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCategories = categories.filter((category) =>
+    category.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Create a new category
-  const handleCreateCategory = async (
-    categoryData: Omit<Category, "id" | "productCount">
-  ) => {
+  const handleCreateCategory = async (categoryData: { name: string }) => {
     try {
       const response = await axiosInstance.post("/category", categoryData);
       setCategories([...categories, response.data.data || response.data]);

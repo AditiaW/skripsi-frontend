@@ -21,18 +21,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  slug: z
-    .string()
-    .min(2, "Slug must be at least 2 characters")
-    .regex(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must contain only lowercase letters, numbers, and hyphens"
-    ),
-  description: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -40,9 +31,8 @@ type FormValues = z.infer<typeof formSchema>;
 interface Category {
   id: string;
   name: string;
-  slug: string;
-  description: string;
-  productCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface CategoryEditDialogProps {
@@ -64,8 +54,6 @@ export function CategoryEditDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: category.name,
-      slug: category.slug,
-      description: category.description,
     },
   });
 
@@ -100,36 +88,6 @@ export function CategoryEditDialog({
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Slug</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      className="resize-none"
-                      {...field}
-                      value={field.value || ""}
-                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

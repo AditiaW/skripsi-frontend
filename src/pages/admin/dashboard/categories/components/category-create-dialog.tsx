@@ -1,5 +1,3 @@
-import React from "react";
-
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -23,18 +21,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
+// Define form schema based on JSON structure
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  slug: z
-    .string()
-    .min(2, "Slug must be at least 2 characters")
-    .regex(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Slug must contain only lowercase letters, numbers, and hyphens"
-    ),
-  description: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -56,42 +46,18 @@ export function CategoryCreateDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      slug: "",
-      description: "",
     },
   });
 
   const handleSubmit = (data: FormValues) => {
     setIsPending(true);
 
-    // Simulate API call
     setTimeout(() => {
       onSubmit(data);
       form.reset();
       setIsPending(false);
+      onOpenChange(false);
     }, 500);
-  };
-
-  // Generate slug from name
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-  };
-
-  // Update slug when name changes
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    form.setValue("name", name);
-
-    // Only auto-generate slug if user hasn't manually edited it
-    if (
-      !form.getValues("slug") ||
-      form.getValues("slug") === generateSlug(form.getValues("name"))
-    ) {
-      form.setValue("slug", generateSlug(name));
-    }
   };
 
   return (
@@ -114,38 +80,7 @@ export function CategoryCreateDialog({
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Electronics"
-                      {...field}
-                      onChange={handleNameChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Slug</FormLabel>
-                  <FormControl>
-                    <Input placeholder="electronics" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Electronic devices and gadgets"
-                      className="resize-none"
+                      placeholder="Pintu"
                       {...field}
                     />
                   </FormControl>

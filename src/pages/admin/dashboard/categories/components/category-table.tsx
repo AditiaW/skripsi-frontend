@@ -33,9 +33,8 @@ import {
 interface Category {
   id: string;
   name: string;
-  slug: string;
-  description: string;
-  productCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface CategoryTableProps {
@@ -72,6 +71,17 @@ export function CategoryTable({
     }
   };
 
+  // Format ISO date to readable format
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   return (
     <>
       <div className="rounded-md border">
@@ -79,18 +89,15 @@ export function CategoryTable({
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead className="hidden md:table-cell">Slug</TableHead>
-              <TableHead className="hidden md:table-cell">
-                Description
-              </TableHead>
-              <TableHead>Products</TableHead>
+              <TableHead className="hidden md:table-cell">Created At</TableHead>
+              <TableHead className="hidden md:table-cell">Updated At</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {categories.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={4} className="h-24 text-center">
                   No categories found.
                 </TableCell>
               </TableRow>
@@ -99,12 +106,11 @@ export function CategoryTable({
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {category.slug}
+                    {formatDate(category.createdAt)}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell max-w-[300px] truncate">
-                    {category.description}
+                  <TableCell className="hidden md:table-cell">
+                    {formatDate(category.updatedAt)}
                   </TableCell>
-                  <TableCell>{category.productCount}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -158,14 +164,14 @@ export function CategoryTable({
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              category and may affect products associated with it.
+              category.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground"
+              className="bg-destructive text-white"
             >
               Delete
             </AlertDialogAction>
