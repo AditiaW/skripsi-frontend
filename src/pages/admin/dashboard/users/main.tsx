@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
+import { PlusCircle } from "lucide-react";
+import axiosInstance from "@/api/axiosInstance";
+import toast from "react-hot-toast";
+
 import { DashboardHeader } from "@/pages/admin/dashboard/components/header";
 import { DashboardShell } from "@/pages/admin/dashboard/components/shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserTable } from "@/pages/admin/dashboard/users/components/user-table";
 import { UserCreateDialog } from "@/pages/admin/dashboard/users/components/user-create-dialog";
-import { PlusCircle } from "lucide-react";
-import axiosInstance from "@/api/axiosInstance";
 
 interface User {
   id: string;
@@ -24,9 +26,7 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  // Fetch users from API
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -35,24 +35,16 @@ export default function UsersPage() {
     try {
       setIsLoading(true);
       const response = await axiosInstance.get("/users");
-
-      // Pastikan respons memiliki data pengguna yang benar
-      const usersData = Array.isArray(response.data.data)
-        ? response.data.data
-        : [];
-
-      setUsers(usersData);
-      setError(null);
+      setUsers(response.data.data);
     } catch (err) {
       console.error("Failed to fetch users:", err);
-      setError("Failed to load users. Please try again later.");
+      toast.error("Failed to load users. Please try again later.");
       setUsers([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Filter users based on search query
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -60,7 +52,6 @@ export default function UsersPage() {
       user.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Create a new user
   const handleCreateUser = async (userData: {
     name: string;
     email: string;
@@ -68,34 +59,35 @@ export default function UsersPage() {
     password: string;
   }) => {
     try {
-      await axiosInstance.post("/users", userData);
-      fetchUsers();
+      const response = await axiosInstance.post("/users", userData);
+      setUsers((prevUsers) => [...prevUsers, response.data.data]);
+      toast.success("User created successfully!");
       setIsCreateDialogOpen(false);
     } catch (err) {
       console.error("Failed to create user:", err);
-      setError("Failed to create user. Please try again.");
+      toast.error("Failed to create user. Please try again.");
     }
   };
 
-  // Update a user
   const handleUpdateUser = async (id: string, userData: Partial<User>) => {
     try {
       await axiosInstance.patch(`/users/${id}`, userData);
-      fetchUsers();
+      fetchUsers()
+      toast.success("User updated successfully!");
     } catch (err) {
       console.error("Failed to update user:", err);
-      setError("Failed to update user. Please try again.");
+      toast.error("Failed to update user. Please try again.");
     }
   };
 
-  // Delete a user
   const handleDeleteUser = async (id: string) => {
     try {
       await axiosInstance.delete(`/users/${id}`);
-      fetchUsers();
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== id));
+      toast.success("User deleted successfully!");
     } catch (err) {
       console.error("Failed to delete user:", err);
-      setError("Failed to delete user. Please try again.");
+      toast.error("Failed to delete user. Please try again.");
     }
   };
 
@@ -111,11 +103,6 @@ export default function UsersPage() {
         </Button>
       </DashboardHeader>
       <div className="space-y-4">
-        {error && (
-          <div className="rounded-md bg-red-50 p-4">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
         <div className="flex items-center justify-between">
           <div className="w-full max-w-sm">
             <Input
