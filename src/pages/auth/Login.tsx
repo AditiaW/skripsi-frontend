@@ -84,7 +84,7 @@ const LoginPage = () => {
       useAuthStore.getState().login(token);
       await setupFCM();
       toast.success("Login successful! Welcome back!");
-      navigate("/dashboard");
+      navigate("/");
     } catch (err) {
       setError(
         axios.isAxiosError(err) 

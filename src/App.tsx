@@ -16,6 +16,8 @@ import UsersPage from "./pages/admin/dashboard/users/main";
 import OrdersPage from "./pages/admin/dashboard/orders/main";
 import CategoriesPage from "./pages/admin/dashboard/categories/main";
 import ProductsPage from "./pages/admin/dashboard/products/main";
+import ProtectedRoute from "./components/ProtectedRoute";
+import UnauthorizedPage from "./pages/auth/UnauthorizedPage";
 
 const App = () => {
   return (
@@ -26,22 +28,39 @@ const App = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         {/* Shop Routes */}
         <Route path="/" element={<HomepageShop />} />
         <Route path="/product" element={<ShopPage />} />
         <Route path="/product/:id" element={<ShopDetail />} />
         <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/checkout/success" element={<CheckoutSuccess />} />
+
+        {/* Protected Checkout Routes */}
+        <Route 
+          element={<ProtectedRoute requireAuth> <Checkout /> </ProtectedRoute>} 
+          path="/checkout" 
+        />
+        <Route 
+          element={<ProtectedRoute requireAuth> <CheckoutSuccess /> </ProtectedRoute>} 
+          path="/checkout/success" 
+        />
 
         {/* Admin Routes */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<DashboardHome />} />
-          <Route path="users" element={<UsersPage />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="categories" element={<CategoriesPage />} />
-          <Route path="products" element={<ProductsPage />} />
+        <Route
+          element={
+            <ProtectedRoute adminOnly>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard">
+            <Route index element={<DashboardHome />} />
+            <Route path="users" element={<UsersPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="categories" element={<CategoriesPage />} />
+            <Route path="products" element={<ProductsPage />} />
+          </Route>
         </Route>
       </Routes>
       <Toaster />

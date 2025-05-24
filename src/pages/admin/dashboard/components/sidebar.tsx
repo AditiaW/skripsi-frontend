@@ -19,16 +19,21 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import useAuthStore from "@/store/authStore";
 
 export function DashboardSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // In a real app, you would handle logout logic here
-    // For example: signOut() from your auth logic
-    console.log("Logging out...");
-    navigate("/");
+    try {
+      useAuthStore.getState().logout();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      alert("Logout failed. Please try again.");
+      throw error;
+    }
   };
 
   const navItems = [
