@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,9 +25,9 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 
 interface Product {
@@ -36,6 +37,7 @@ interface Product {
   price: number;
   quantity: number;
   image: string;
+  categoryId: string;
   category: {
     id: string;
     name: string;
@@ -45,13 +47,19 @@ interface Product {
 interface ProductTableProps {
   products: Product[];
   categories: Array<{ id: string; name: string }>;
-  onUpdate: (id: string, data: Partial<Product>) => void;
-  onDelete: (id: string) => void;
+  onUpdate: (id: string, data: Partial<Product>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
-export function ProductTable({ products, categories, onUpdate, onDelete }: ProductTableProps) {
+export function ProductTable({
+  products,
+  categories,
+  onUpdate,
+  onDelete,
+}: ProductTableProps) {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -60,21 +68,36 @@ export function ProductTable({ products, categories, onUpdate, onDelete }: Produ
     }).format(price);
   };
 
+  const handleDelete = async (id: string) => {
+    setIsDeleting(true);
+    try {
+      await onDelete(id);
+      setProductToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete product:", error);
+      toast.error("Failed to delete product. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Gambar</TableHead>
-              <TableHead>Nama</TableHead>
-              <TableHead className="hidden md:table-cell">Kategori</TableHead>
-              <TableHead>Harga</TableHead>
-              <TableHead className="hidden md:table-cell">Stok</TableHead>
-              <TableHead className="text-right">Aksi</TableHead>
+              <TableHead className="w-[80px]">Image</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead className="hidden lg:table-cell">
+                Description
+              </TableHead>
+              <TableHead className="hidden md:table-cell">Category</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead className="hidden sm:table-cell">Stock</TableHead>
+              <TableHead className="text-right w-[80px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          
           <TableBody>
             {products.map((product) => (
               <TableRow key={product.id}>
@@ -87,7 +110,12 @@ export function ProductTable({ products, categories, onUpdate, onDelete }: Produ
                 </TableCell>
                 <TableCell>
                   <div className="font-medium">{product.name}</div>
-                  <div className="text-muted-foreground line-clamp-1">
+                  <div className="text-muted-foreground line-clamp-1 sm:hidden">
+                    {product.description}
+                  </div>
+                </TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  <div className="text-muted-foreground line-clamp-2">
                     {product.description}
                   </div>
                 </TableCell>
@@ -95,8 +123,10 @@ export function ProductTable({ products, categories, onUpdate, onDelete }: Produ
                   <Badge variant="outline">{product.category.name}</Badge>
                 </TableCell>
                 <TableCell>{formatPrice(product.price)}</TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <Badge variant={product.quantity > 0 ? "default" : "destructive"}>
+                <TableCell className="hidden sm:table-cell">
+                  <Badge
+                    variant={product.quantity > 0 ? "default" : "destructive"}
+                  >
                     {product.quantity} pcs
                   </Badge>
                 </TableCell>
@@ -108,8 +138,10 @@ export function ProductTable({ products, categories, onUpdate, onDelete }: Produ
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => setEditingProduct(product)}>
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => setEditingProduct(product)}
+                      >
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
                       </DropdownMenuItem>
@@ -118,7 +150,7 @@ export function ProductTable({ products, categories, onUpdate, onDelete }: Produ
                         className="text-destructive"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Hapus
+                        Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -135,28 +167,41 @@ export function ProductTable({ products, categories, onUpdate, onDelete }: Produ
           categories={categories}
           open={!!editingProduct}
           onOpenChange={() => setEditingProduct(null)}
-          onSubmit={(data) => {
-            onUpdate(editingProduct.id, data);
+          onSubmit={async (data) => {
+            await onUpdate(editingProduct.id, data);
             setEditingProduct(null);
           }}
         />
       )}
 
-      <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
+      <AlertDialog
+        open={!!productToDelete}
+        onOpenChange={(open) => !open && setProductToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Yakin ingin menghapus?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Are you sure you want to delete?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Produk yang sudah dihapus tidak dapat dikembalikan
+              Deleted products cannot be restored.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => productToDelete && onDelete(productToDelete)}
+              onClick={() => productToDelete && handleDelete(productToDelete)}
               className="bg-destructive hover:bg-destructive/90"
+              disabled={isDeleting}
             >
-              Hapus
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

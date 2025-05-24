@@ -18,6 +18,7 @@ interface Product {
   price: number;
   quantity: number;
   image: string;
+  categoryId: string;
   category: {
     id: string;
     name: string;
@@ -42,16 +43,18 @@ export default function ProductsPage() {
         setIsLoading(true);
         const [productsRes, categoriesRes] = await Promise.all([
           axiosInstance.get("/product"),
-          axiosInstance.get("/category")
+          axiosInstance.get("/category"),
         ]);
 
-        setProducts(productsRes.data.map((p: any) => ({
-          ...p,
-          category: p.category
-        })));
+        setProducts(
+          productsRes.data.map((p: any) => ({
+            ...p,
+            category: p.category,
+          }))
+        );
         setCategories(categoriesRes.data);
       } catch (err) {
-        toast.error("Gagal memuat data");
+        toast.error("Failed to load data");
       } finally {
         setIsLoading(false);
       }
@@ -63,66 +66,71 @@ export default function ProductsPage() {
     try {
       const res = await axiosInstance.post("/product", {
         ...data,
-        categoryId: data.category.id
       });
-      
+
       setProducts([...products, res.data]);
-      toast.success("Produk berhasil dibuat");
+      toast.success("Product created successfully");
       setIsCreateDialogOpen(false);
     } catch (err) {
-      toast.error("Gagal membuat produk");
+      toast.error("Failed to create product. Please try again.");
     }
   };
 
   const handleUpdateProduct = async (id: string, data: Partial<Product>) => {
     try {
       await axiosInstance.patch(`/product/${id}`, data);
-      setProducts(products.map(p => p.id === id ? {...p, ...data} : p));
-      toast.success("Produk berhasil diupdate");
+      setProducts(products.map((p) => (p.id === id ? { ...p, ...data } : p)));
+      toast.success("Product updated successfully");
     } catch (err) {
-      toast.error("Gagal mengupdate produk");
+      toast.error("Failed to update product. Please try again.");
     }
   };
 
   const handleDeleteProduct = async (id: string) => {
     try {
       await axiosInstance.delete(`/product/${id}`);
-      setProducts(products.filter(p => p.id !== id));
-      toast.success("Produk berhasil dihapus");
+      setProducts(products.filter((p) => p.id !== id));
+      toast.success("Product deleted successfully");
     } catch (err) {
-      toast.error("Gagal menghapus produk");
+      toast.error("Failed to delete product");
     }
   };
 
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.category.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <DashboardShell>
-      <DashboardHeader heading="Kelola Produk" text="Kelola produk toko Anda">
+      <DashboardHeader
+        heading="Manage Products"
+        text="Manage your store's products"
+      >
         <Button onClick={() => setIsCreateDialogOpen(true)}>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Tambah Produk
+          Add Product
         </Button>
       </DashboardHeader>
-      
+
       <div className="space-y-4">
         <div className="w-full max-w-sm">
           <Input
-            placeholder="Cari produk..."
+            placeholder="Search product..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
         {isLoading ? (
-          <div className="text-center py-8">Memuat produk...</div>
+          <div className="text-center py-8">Loading products...</div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-8">
-            {products.length === 0 ? "Belum ada produk" : "Hasil pencarian tidak ditemukan"}
+            {products.length === 0
+              ? "No products available"
+              : "No search results found"}
           </div>
         ) : (
           <ProductTable
