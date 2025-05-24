@@ -17,20 +17,21 @@ import OrdersPage from "./pages/admin/dashboard/orders/main";
 import CategoriesPage from "./pages/admin/dashboard/categories/main";
 import ProductsPage from "./pages/admin/dashboard/products/main";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AuthRoute from "./components/AuthRoute";
 import UnauthorizedPage from "./pages/auth/UnauthorizedPage";
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Auth Routes - Hanya bisa diakses jika belum login */}
+        <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
+        <Route path="/register" element={<AuthRoute><Register /></AuthRoute>} />
+        <Route path="/forgot-password" element={<AuthRoute><ForgotPassword /></AuthRoute>} />
+        <Route path="/reset-password" element={<AuthRoute><ResetPassword /></AuthRoute>} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-        {/* Shop Routes */}
+        {/* Public Shop Routes */}
         <Route path="/" element={<HomepageShop />} />
         <Route path="/product" element={<ShopPage />} />
         <Route path="/product/:id" element={<ShopDetail />} />
@@ -38,32 +39,39 @@ const App = () => {
 
         {/* Protected Checkout Routes */}
         <Route 
-          element={<ProtectedRoute requireAuth> <Checkout /> </ProtectedRoute>} 
           path="/checkout" 
+          element={
+            <ProtectedRoute requireAuth>
+              <Checkout />
+            </ProtectedRoute>
+          } 
         />
         <Route 
-          element={<ProtectedRoute requireAuth> <CheckoutSuccess /> </ProtectedRoute>} 
           path="/checkout/success" 
+          element={
+            <ProtectedRoute requireAuth>
+              <CheckoutSuccess />
+            </ProtectedRoute>
+          } 
         />
 
         {/* Admin Routes */}
         <Route
+          path="/dashboard"
           element={
             <ProtectedRoute adminOnly>
               <DashboardLayout />
             </ProtectedRoute>
           }
         >
-          <Route path="dashboard">
-            <Route index element={<DashboardHome />} />
-            <Route path="users" element={<UsersPage />} />
-            <Route path="orders" element={<OrdersPage />} />
-            <Route path="categories" element={<CategoriesPage />} />
-            <Route path="products" element={<ProductsPage />} />
-          </Route>
+          <Route index element={<DashboardHome />} />
+          <Route path="users" element={<UsersPage />} />
+          <Route path="orders" element={<OrdersPage />} />
+          <Route path="categories" element={<CategoriesPage />} />
+          <Route path="products" element={<ProductsPage />} />
         </Route>
       </Routes>
-      <Toaster />
+      <Toaster position="top-right" />
     </BrowserRouter>
   );
 };
