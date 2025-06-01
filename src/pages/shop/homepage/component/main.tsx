@@ -18,14 +18,67 @@ export default function Homepage() {
   const [newestProducts, setNewestProducts] = useState<Product[]>([]);
   const { addToCart } = useCartStore();
 
-  // Fetch products
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        // 🚀 Fetch from API
         const response = await axiosInstance.get("/product");
-        setNewestProducts(response.data);
+        const products = response.data;
+
+        console.log("✅ Data from API:", products.length, "items");
+
+        // 🛠 Store in state
+        setNewestProducts(products);
+
+        // 💾 Store in Cache Storage
+        const cache = await caches.open("products-cache");
+        const cacheResponse = new Response(JSON.stringify(products), {
+          headers: { "Content-Type": "application/json" },
+        });
+
+        await cache.put("/product", cacheResponse);
+        console.log(
+          "✅ Product data saved to cache:",
+          products.length,
+          "items"
+        );
       } catch (err) {
-        console.log("Homepage error: ", err);
+        console.error("❌ Error fetching products:", err);
+
+        // ⚡ If offline, try fetching from cache
+        if (!navigator.onLine || err.message === "Network Error") {
+          console.log("⚡ Offline mode - Attempting to retrieve from cache...");
+          try {
+            const cache = await caches.open("products-cache");
+            const cachedResponse = await cache.match("/product");
+
+            if (cachedResponse) {
+              const cachedData = await cachedResponse.json();
+              console.log(
+                "✅ Data retrieved from cache:",
+                cachedData.length,
+                "items"
+              );
+
+              // Ensure data format is an array for UI rendering
+              if (Array.isArray(cachedData)) {
+                setNewestProducts(cachedData);
+              } else {
+                console.log(
+                  "⚠️ Cached data is not an array, cannot render:",
+                  cachedData
+                );
+              }
+            } else {
+              console.log("❌ No data found in cache");
+              setNewestProducts([]);
+            }
+          } catch (cacheErr) {
+            console.error("❌ Error accessing cache:", cacheErr);
+          }
+        } else {
+          setNewestProducts([]);
+        }
       }
     };
 
@@ -59,8 +112,8 @@ export default function Homepage() {
                 Everything Your Home Needs in One Place
               </h1>
               <p className="max-w-[600px] text-gray-500 text-sm md:text-base mx-auto lg:mx-0">
-                Premium quality furniture for your home. From stylish tables to
-                comfortable sofas, all designed with care.
+                Premium quality furniture for your home. From stylish tables or
+                doors, all designed with care.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link to={"/product"}>
@@ -89,48 +142,54 @@ export default function Homepage() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 xs:gap-4 md:gap-6">
             {newestProducts.map((product) => (
-              <div className="group relative">
-                <div className="aspect-square overflow-hidden rounded-lg bg-white border border-gray-200">
-                  <img
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
-                    width={300}
-                    height={300}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                  />
-                  <div className="absolute top-2 right-2 md:top-4 md:right-4 flex flex-col gap-2">
-                    <button
-                      onClick={() => navigate(`/product/${product.id}`)}
-                      className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-white/80 flex items-center justify-center shadow-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white"
-                    >
-                      <Search className="h-3 w-3 md:h-4 md:w-4" />
-                      <span className="sr-only">Quick view</span>
-                    </button>
+              <Link
+                key={product.id}
+                to={`/product/${product.id}`}
+                className="group relative"
+              >
+                <div className="group relative">
+                  <div className="aspect-square overflow-hidden rounded-lg bg-white border border-gray-200">
+                    <img
+                      src={product.image || "/placeholder.svg"}
+                      alt={product.name}
+                      width={300}
+                      height={300}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    />
+                    <div className="absolute top-2 right-2 md:top-4 md:right-4 flex flex-col gap-2">
+                      <button
+                        onClick={() => navigate(`/product/${product.id}`)}
+                        className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-white/80 flex items-center justify-center shadow-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white"
+                      >
+                        <Search className="h-3 w-3 md:h-4 md:w-4" />
+                        <span className="sr-only">Quick view</span>
+                      </button>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="inline-flex items-center justify-center rounded-md bg-red-500 px-3 py-2 text-xs md:text-sm font-medium text-white shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                      >
+                        <ShoppingCart className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+                        Add to Cart
+                      </button>
+                    </div>
                   </div>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      className="inline-flex items-center justify-center rounded-md bg-red-500 px-3 py-2 text-xs md:text-sm font-medium text-white shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                    >
-                      <ShoppingCart className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
-                      Add to Cart
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-3 md:mt-4 space-y-1 text-center">
-                  <span className="inline-block px-2 py-1 text-xs rounded-full border border-gray-200 mb-1 md:mb-2">
-                    {product.category.name}
-                  </span>
-                  <h3 className="text-xs sm:text-sm md:text-base font-medium truncate">
-                    {product.name}
-                  </h3>
-                  <div className="flex justify-center gap-2">
-                    <span className="text-xs md:text-sm font-medium text-red-500">
-                      {formatPrice(product.price)}
+                  <div className="mt-3 md:mt-4 space-y-1 text-center">
+                    <span className="inline-block px-2 py-1 text-xs rounded-full border border-gray-200 mb-1 md:mb-2">
+                      {product.category.name}
                     </span>
+                    <h3 className="text-xs sm:text-sm md:text-base font-medium truncate">
+                      {product.name}
+                    </h3>
+                    <div className="flex justify-center gap-2">
+                      <span className="text-xs md:text-sm font-medium text-red-500">
+                        {formatPrice(product.price)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
           <div className="mt-8 md:mt-10 text-center">

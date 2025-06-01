@@ -22,10 +22,48 @@ export default function ShopPage() {
     const fetchProducts = async () => {
       try {
         const response = await axiosInstance.get("/product");
-        setProducts(response.data);
+        const products = response.data;
+        setProducts(products);
+        const cache = await caches.open("products-cache");
+        const cacheResponse = new Response(JSON.stringify(products), {
+          headers: { "Content-Type": "application/json" },
+        });
+
+        await cache.put("/product", cacheResponse);
       } catch (err) {
-        toast.error("Gagal memuat produk");
         console.log("Error Fetch Product: ", err);
+        if (!navigator.onLine || err.message === "Network Error") {
+          console.log("⚡ Offline mode - Attempting to retrieve from cache...");
+          try {
+            const cache = await caches.open("products-cache");
+            const cachedResponse = await cache.match("/product");
+
+            if (cachedResponse) {
+              const cachedData = await cachedResponse.json();
+              console.log(
+                "✅ Data retrieved from cache:",
+                cachedData.length,
+                "items"
+              );
+
+              if (Array.isArray(cachedData)) {
+                setProducts(cachedData);
+              } else {
+                console.log(
+                  "⚠️ Cached data is not an array, cannot render:",
+                  cachedData
+                );
+              }
+            } else {
+              console.log("❌ No data found in cache");
+              setProducts([]);
+            }
+          } catch (cacheErr) {
+            console.error("❌ Error accessing cache:", cacheErr);
+          }
+        } else {
+          setProducts([]);
+        }
       }
     };
 
@@ -49,7 +87,7 @@ export default function ShopPage() {
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     addToCart(product);
-    toast.success(`${product.name} ditambahkan ke keranjang!`);
+    toast.success(`${product.name} added to cart!`);
   };
 
   // Get unique categories from products
@@ -87,7 +125,9 @@ export default function ShopPage() {
     // Filter by category
     if (
       selectedCategories.length > 0 &&
-      !selectedCategories.some((category) => category.id === product.category.id)
+      !selectedCategories.some(
+        (category) => category.id === product.category.id
+      )
     ) {
       return false;
     }
