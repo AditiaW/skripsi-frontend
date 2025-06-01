@@ -33,7 +33,7 @@ export default function Footer() {
               <Link to="/" className="text-sm text-gray-500 hover:text-red-500 transition-colors">
                 Home
               </Link>
-              <Link to="/shop" className="text-sm text-gray-500 hover:text-red-500 transition-colors">
+              <Link to="/product" className="text-sm text-gray-500 hover:text-red-500 transition-colors">
                 Shop
               </Link>
               <Link to="/login" className="text-sm text-gray-500 hover:text-red-500 transition-colors">
