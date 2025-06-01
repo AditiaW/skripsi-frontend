@@ -19,7 +19,7 @@ export default function OrderSuccessPage() {
         <h2 className="text-xl font-semibold">What's Next?</h2>
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
           <Link
-            to="/shop"
+            to="/product"
             className="inline-flex items-center justify-center rounded-md bg-red-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-red-600 focus:outline-none"
           >
             Continue Shopping
