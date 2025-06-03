@@ -19,16 +19,18 @@ import ProductsPage from "./pages/admin/dashboard/products/main";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRoute from "./components/AuthRoute";
 import UnauthorizedPage from "./pages/auth/UnauthorizedPage";
+import VerifyEmail from "./pages/auth/VerifyEmail";
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Auth Routes - Hanya bisa diakses jika belum login */}
+        {/* Auth Routes - Pengguna yang sudah login tidak dapat mengakses page ini */}
         <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
         <Route path="/register" element={<AuthRoute><Register /></AuthRoute>} />
         <Route path="/forgot-password" element={<AuthRoute><ForgotPassword /></AuthRoute>} />
         <Route path="/reset-password" element={<AuthRoute><ResetPassword /></AuthRoute>} />
+        <Route path="/verify-email" element={<AuthRoute><VerifyEmail /></AuthRoute>} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         {/* Public Shop Routes */}

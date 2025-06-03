@@ -2,7 +2,7 @@
 import { ReactNode, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
-import { toast } from "react-hot-toast";
+// import { toast } from "react-hot-toast";
 
 interface AuthRouteProps {
   children: ReactNode;
@@ -11,16 +11,16 @@ interface AuthRouteProps {
 const AuthRoute = ({ children }: AuthRouteProps) => {
   const { isAuthenticated } = useAuthStore();
   const location = useLocation();
-  const authRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
+  const authRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'];
 
   useEffect(() => {
     // Hanya tampilkan toast jika mengakses route auth dan sudah login
-    if (isAuthenticated && authRoutes.includes(location.pathname)) {
-      toast("You are already logged in", {
-        icon: "ℹ️",
-        id: "already-logged-in",
-      });
-    }
+    // if (isAuthenticated && authRoutes.includes(location.pathname)) {
+    //   toast("You are already logged in", {
+    //     icon: "ℹ️",
+    //     id: "already-logged-in",
+    //   });
+    // }
   }, [isAuthenticated, location.pathname]);
 
   if (isAuthenticated && authRoutes.includes(location.pathname)) {

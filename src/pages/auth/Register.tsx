@@ -69,10 +69,12 @@ const Register = () => {
           password: values.password,
         },
         {
-          timeout: 5000,
+          timeout: 10000,
         }
       );
-      toast.success("Registration successful! Your account has been created.");
+      toast.success(
+        "Registration successful! Your account has been created. Please check your email for verification."
+      );
 
       navigate("/login");
     } catch (err) {
@@ -81,7 +83,7 @@ const Register = () => {
     } finally {
       setTimeout(() => {
         setIsLoading(false);
-      }, 5000);
+      }, 10000);
     }
   };
 
