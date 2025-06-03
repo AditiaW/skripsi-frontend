@@ -15,7 +15,6 @@ const checkoutSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 characters"),
   address: z.string().min(1, "Address is required"),
-  address2: z.string().optional(),
   city: z.string().min(1, "City is required"),
   zip: z.string().min(1, "ZIP code is required"),
   notes: z.string().optional(),
@@ -51,7 +50,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
     const clientKey =
-      import.meta.env.VITE_CLIENT || "SB-Mid-client-M1nENuqliMG9c6jx"; // Fallback for missing env
+      import.meta.env.VITE_MIDTRANS_CLIENT; 
 
     // Check if the script is already loaded
     if (!document.querySelector(`script[src="${snapScript}"]`)) {
@@ -314,21 +313,6 @@ export default function CheckoutPage() {
                       {errors.address.message}
                     </p>
                   )}
-                </div>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="address2"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Apartment, suite, etc. (optional)
-                  </label>
-                  <input
-                    id="address2"
-                    type="text"
-                    placeholder="Apt 4B"
-                    className="w-full rounded-md border border-gray-300 py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                    {...register("address2")}
-                  />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
