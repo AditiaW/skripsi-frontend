@@ -100,6 +100,15 @@ export function DashboardSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => navigate("/")}
+              tooltip="Go to Homepage"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              <span>Homepage</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
               <LogOut className="h-4 w-4" />
               <span>Logout</span>
