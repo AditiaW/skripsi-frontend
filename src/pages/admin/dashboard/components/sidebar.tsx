@@ -20,15 +20,19 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import useAuthStore from "@/store/authStore";
+import { toast } from "react-hot-toast";
 
 export function DashboardSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      useAuthStore.getState().logout();
-      navigate("/");
+      await navigate("/");
+      toast.success("Logout success");
+      setTimeout(() => {
+        useAuthStore.getState().logout();
+      }, 1000);
     } catch (error) {
       console.error("Logout failed:", error);
       alert("Logout failed. Please try again.");
