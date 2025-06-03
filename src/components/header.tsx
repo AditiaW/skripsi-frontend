@@ -11,13 +11,12 @@ export default function Header() {
     state.items.reduce((total, item) => total + item.quantity, 0)
   );
   
-  // Ambil state auth dari store
   const { isAuthenticated, userRole, logout } = useAuthStore();
   
   const handleLogout = () => {
     logout();
     toast.success('Logged out successfully');
-    setMobileMenuOpen(false); // Tutup mobile menu setelah logout
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -64,14 +63,6 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
               <>
-                {userRole === "ADMIN" && (
-                  <Link
-                    to="/dashboard"
-                    className="text-sm font-medium transition-colors hover:text-red-500"
-                  >
-                    Dashboard
-                  </Link>
-                )}
                 <button
                   onClick={handleLogout}
                   className="text-sm font-medium transition-colors hover:text-red-500"
