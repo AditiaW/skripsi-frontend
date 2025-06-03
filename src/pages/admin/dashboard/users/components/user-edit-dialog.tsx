@@ -33,6 +33,7 @@ const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   role: z.enum(["ADMIN", "USER"]),
+  password: z.string().min(8, "Password must be at least 8 characters").optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -41,6 +42,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  password: string;
   role: "ADMIN" | "USER";
   resetToken: string | null;
   resetTokenExpiry: string | null;
@@ -69,15 +71,21 @@ export function UserEditDialog({
       name: user.name,
       email: user.email,
       role: user.role,
+      password: user.password,
     },
   });
 
   const handleSubmit = (data: FormValues) => {
     setIsPending(true);
 
+    const payload: Partial<FormValues> = {
+      ...data,
+      password: data.password ? data.password : undefined,
+    };
+
     // Simulate API call
     setTimeout(() => {
-      onSubmit(data);
+      onSubmit(payload);
       setIsPending(false);
       onOpenChange(false);
     }, 500);
@@ -116,6 +124,19 @@ export function UserEditDialog({
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
