@@ -16,22 +16,19 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
-interface OrderItem {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-}
-
 interface Order {
   id: string;
-  customer: string;
-  email: string;
-  date: string;
-  status: string;
-  total: number;
+  shippingAddress: string;
+  shippingCity: string;
+  shippingZip: string;
+  shippingPhone: string;
+  shippingNotes: string;
+  totalAmount: number;
   paymentStatus: string;
-  items: OrderItem[];
+  snapToken: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
 }
 
 interface OrderViewDialogProps {
@@ -56,37 +53,21 @@ export function OrderViewDialog({
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("id-ID", {
       style: "currency",
-      currency: "USD",
+      currency: "IDR",
+      minimumFractionDigits: 0,
     }).format(price);
-  };
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "Pending":
-        return "secondary";
-      case "Processing":
-        return "default";
-      case "Shipped":
-        return "default";
-      case "Delivered":
-        return "success";
-      case "Cancelled":
-        return "destructive";
-      default:
-        return "outline";
-    }
   };
 
   const getPaymentStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case "Paid":
+      case "PAID":
         return "success";
-      case "Pending":
-        return "secondary";
-      case "Refunded":
-        return "destructive";
+      case "PENDING":
+        return "pending";
+      case "FAILED":
+        return "warning";
       default:
         return "outline";
     }
@@ -112,75 +93,75 @@ export function OrderViewDialog({
                   <span className="font-medium">Order ID:</span> {order.id}
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium">Date:</span>{" "}
-                  {formatDate(order.date)}
+                  <span className="font-medium">Created:</span>{" "}
+                  {formatDate(order.createdAt)}
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium">Status:</span>{" "}
-                  <Badge variant={getStatusBadgeVariant(order.status)}>
-                    {order.status}
-                  </Badge>
+                  <span className="font-medium">Updated:</span>{" "}
+                  {formatDate(order.updatedAt)}
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium">Payment:</span>{" "}
+                  <span className="font-medium">Payment Status:</span>{" "}
                   <Badge
                     variant={getPaymentStatusBadgeVariant(order.paymentStatus)}
                   >
                     {order.paymentStatus}
                   </Badge>
                 </p>
+                <p className="text-sm">
+                  <span className="font-medium">Snap Token:</span>{" "}
+                  {order.snapToken}
+                </p>
               </div>
             </div>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">
-                Customer Information
+                Shipping Information
               </h3>
               <div className="mt-2 space-y-1">
                 <p className="text-sm">
-                  <span className="font-medium">Name:</span> {order.customer}
+                  <span className="font-medium">Address:</span>{" "}
+                  {order.shippingAddress}
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium">Email:</span> {order.email}
+                  <span className="font-medium">City:</span>{" "}
+                  {order.shippingCity}
                 </p>
+                <p className="text-sm">
+                  <span className="font-medium">ZIP Code:</span>{" "}
+                  {order.shippingZip}
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium">Phone:</span>{" "}
+                  {order.shippingPhone}
+                </p>
+                {order.shippingNotes && (
+                  <p className="text-sm">
+                    <span className="font-medium">Notes:</span>{" "}
+                    {order.shippingNotes}
+                  </p>
+                )}
               </div>
             </div>
           </div>
           <Separator />
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">
-              Order Items
+              Order Summary
             </h3>
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead className="text-right">Subtotal</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {order.items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell className="text-right">
-                        {item.quantity}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatPrice(item.price)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatPrice(item.price * item.quantity)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
                   <TableRow>
-                    <TableCell colSpan={3} className="text-right font-medium">
-                      Total
-                    </TableCell>
+                    <TableCell className="font-medium">Total Amount</TableCell>
                     <TableCell className="text-right font-bold">
-                      {formatPrice(order.total)}
+                      {formatPrice(order.totalAmount)}
                     </TableCell>
                   </TableRow>
                 </TableBody>

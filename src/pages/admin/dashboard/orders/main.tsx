@@ -1,64 +1,46 @@
 import { useState, useEffect } from "react";
-import { PlusCircle } from "lucide-react";
 import axiosInstance from "@/api/axiosInstance";
 
 import { DashboardHeader } from "@/pages/admin/dashboard/components/header";
 import { DashboardShell } from "@/pages/admin/dashboard/components/shell";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OrderTable } from "@/pages/admin/dashboard/orders/components/order-table";
-import { OrderCreateDialog } from "@/pages/admin/dashboard/orders/components/order-create-dialog";
-
-interface OrderItem {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-}
 
 interface Order {
   id: string;
-  customer: string;
-  email: string;
-  date: string;
-  status: string;
-  total: number;
+  shippingAddress: string;
+  shippingCity: string;
+  shippingZip: string;
+  shippingPhone: string;
+  shippingNotes: string;
+  totalAmount: number;
   paymentStatus: string;
-  items: OrderItem[];
-}
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
+  snapToken: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
 }
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch orders and products from API
+  // Fetch orders from API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [ordersResponse, productsResponse] = await Promise.all([
-          axiosInstance.get("/orders"),
-          axiosInstance.get("/product"),
-        ]);
-
-        setOrders(ordersResponse.data.data || ordersResponse.data);
-        setProducts(productsResponse.data.data || productsResponse.data);
+        const response = await axiosInstance.get("/orders");
+        
+        // Handle both possible response structures
+        setOrders(response.data.data || response.data);
         setError(null);
       } catch (err) {
-        console.error("Failed to fetch data:", err);
-        setError("Failed to load data. Please try again later.");
+        console.error("Failed to fetch orders:", err);
+        setError("Failed to load orders. Please try again later.");
         setOrders([]);
-        setProducts([]);
       } finally {
         setIsLoading(false);
       }
@@ -71,57 +53,15 @@ export default function OrdersPage() {
   const filteredOrders = orders.filter(
     (order) =>
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.paymentStatus.toLowerCase().includes(searchQuery.toLowerCase())
+      order.shippingAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.shippingCity.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.paymentStatus.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.shippingPhone.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  // Create a new order
-  const handleCreateOrder = async (orderData: Omit<Order, "id" | "date"> & { total: number }) => {
-    try {
-      const response = await axiosInstance.post("/orders", orderData);
-      setOrders([...orders, response.data.data || response.data]);
-      setIsCreateDialogOpen(false);
-    } catch (err) {
-      console.error("Failed to create order:", err);
-      setError("Failed to create order. Please try again.");
-    }
-  };
-
-  // Update an order
-  const handleUpdateOrder = async (id: string, orderData: Partial<Order>) => {
-    try {
-      const response = await axiosInstance.patch(`/orders/${id}`, orderData);
-      setOrders(
-        orders.map((order) =>
-          order.id === id ? (response.data.data || response.data) : order
-        )
-      );
-    } catch (err) {
-      console.error("Failed to update order:", err);
-      setError("Failed to update order. Please try again.");
-    }
-  };
-
-  // Delete an order
-  const handleDeleteOrder = async (id: string) => {
-    try {
-      await axiosInstance.delete(`/orders/${id}`);
-      setOrders(orders.filter((order) => order.id !== id));
-    } catch (err) {
-      console.error("Failed to delete order:", err);
-      setError("Failed to delete order. Please try again.");
-    }
-  };
 
   return (
     <DashboardShell>
-      <DashboardHeader heading="Order Management" text="View and manage customer orders">
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Order
-        </Button>
-      </DashboardHeader>
+      <DashboardHeader heading="Order Management" text="View customer orders" />
       <div className="space-y-4">
         {error && (
           <div className="rounded-md bg-red-50 p-4">
@@ -143,20 +83,9 @@ export default function OrdersPage() {
             <p>Loading orders...</p>
           </div>
         ) : (
-          <OrderTable 
-            orders={filteredOrders} 
-            onUpdate={handleUpdateOrder} 
-            onDelete={handleDeleteOrder} 
-          />
+          <OrderTable orders={filteredOrders} />
         )}
       </div>
-      <OrderCreateDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        onSubmit={handleCreateOrder}
-        products={products}
-      />
     </DashboardShell>
   );
 }
-
