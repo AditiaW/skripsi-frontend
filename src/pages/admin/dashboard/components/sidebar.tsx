@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   LogOut,
   Package,
-  Settings,
   ShoppingBag,
   Users,
 } from "lucide-react";
