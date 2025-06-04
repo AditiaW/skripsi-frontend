@@ -66,11 +66,6 @@ export function DashboardSidebar() {
       href: "/dashboard/users",
       icon: Users,
     },
-    {
-      title: "Settings",
-      href: "/dashboard/settings",
-      icon: Settings,
-    },
   ];
 
   return (
