@@ -311,34 +311,40 @@ export function ProductCreateDialog({
                     <FormLabel>Product Image</FormLabel>
                     <FormControl>
                       <div className="flex flex-col items-center gap-4">
-                        <div className="relative flex h-32 w-full items-center justify-center rounded-md border border-dashed">
-                          {isUploading ? (
-                            <div className="flex flex-col items-center gap-2">
-                              <Loader2 className="h-6 w-6 animate-spin" />
-                              <span className="text-sm">Uploading...</span>
-                            </div>
-                          ) : previewImage ? (
-                            <img
-                              src={previewImage}
-                              alt="Product preview"
-                              className="h-full w-full object-contain p-2"
-                            />
-                          ) : (
-                            <div className="flex flex-col items-center gap-1 text-center">
-                              <ImagePlus className="h-8 w-8 text-muted-foreground" />
-                              <div className="text-sm text-muted-foreground">
-                                Click to upload or drag and drop
+                        <label
+                          htmlFor="product-image-upload"
+                          className="cursor-pointer w-full"
+                        >
+                          <div className="relative flex h-32 w-full items-center justify-center rounded-md border border-dashed">
+                            {isUploading ? (
+                              <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                                <span className="text-sm">Uploading...</span>
                               </div>
-                            </div>
-                          )}
+                            ) : previewImage ? (
+                              <img
+                                src={previewImage}
+                                alt="Product preview"
+                                className="h-full w-full object-contain p-2"
+                              />
+                            ) : (
+                              <div className="flex flex-col items-center gap-1 text-center">
+                                <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                                <div className="text-sm text-muted-foreground">
+                                  Click to upload or drag and drop
+                                </div>
+                              </div>
+                            )}
+                          </div>
                           <Input
+                            id="product-image-upload"
                             type="file"
                             accept="image/*"
-                            className="absolute inset-0 cursor-pointer opacity-0"
+                            className="hidden"
                             onChange={handleImageUpload}
                             ref={field.ref}
                           />
-                        </div>
+                        </label>
                       </div>
                     </FormControl>
                     <FormMessage />

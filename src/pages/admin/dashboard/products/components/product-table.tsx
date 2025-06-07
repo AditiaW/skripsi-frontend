@@ -146,7 +146,7 @@ export function ProductTable({
                         </div>
                         <div className="xl:hidden flex items-center gap-2">
                           <Badge variant="outline" className="text-xs px-2 py-0">
-                            {product.category.name}
+                            {product.category ? product.category.name : "Unknown Category"}
                           </Badge>
                           <Badge
                             variant={product.quantity > 0 ? "default" : "destructive"}
@@ -167,7 +167,7 @@ export function ProductTable({
                     </TableCell>
                     <TableCell className="hidden xl:table-cell p-3">
                       <Badge variant="outline" className="whitespace-nowrap">
-                        {product.category.name}
+                        {product.category ? product.category.name : "Unknown Category"}
                       </Badge>
                     </TableCell>
                     <TableCell className="p-3">
@@ -271,7 +271,7 @@ export function ProductTable({
               <div className="flex items-center justify-between pt-2 border-t">
                 <div className="flex items-center space-x-2">
                   <Badge variant="outline" className="text-xs px-2 py-0.5">
-                    {product.category.name}
+                    {product.category ? product.category.name : "Unknown Category"}
                   </Badge>
                   <Badge
                     variant={product.quantity > 0 ? "default" : "destructive"}

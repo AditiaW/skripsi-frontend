@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useMemo } from "react";
 import { PlusCircle } from "lucide-react";
 import Fuse from "fuse.js";
@@ -60,46 +59,62 @@ export default function ProductsPage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+
         const [productsRes, categoriesRes] = await Promise.all([
           axiosInstance.get("/product"),
           axiosInstance.get("/category"),
         ]);
 
         setProducts(
-          productsRes.data.map((p: any) => ({
-            ...p,
-            category: p.category || { id: "", name: "Uncategorized" },
+          productsRes.data.map((product: Product) => ({
+            ...product,
+            category: product.category,
           }))
         );
+
         setCategories(categoriesRes.data);
-      } catch (err) {
+      } catch {
         toast.error("Failed to load data");
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
   const handleCreateProduct = async (data: Omit<Product, "id">) => {
     try {
+      if (!data.categoryId) {
+        throw new Error("Category is required.");
+      }
+
       const res = await axiosInstance.post("/product", {
         ...data,
-        category: data.categoryId ? { id: data.categoryId } : null,
+        categoryId: data.categoryId,
       });
 
-      setProducts([...products, res.data]);
+      const updatedProduct = await axiosInstance.get(`/product/${res.data.id}`);
+
+      setProducts([...products, updatedProduct.data]);
       toast.success("Product created successfully");
       setIsCreateDialogOpen(false);
     } catch (err) {
-      toast.error("Failed to create product. Please try again.");
+      toast.error(err.message || "Failed to create product. Please try again.");
     }
   };
 
   const handleUpdateProduct = async (id: string, data: Partial<Product>) => {
     try {
       await axiosInstance.patch(`/product/${id}`, data);
-      setProducts(products.map((p) => (p.id === id ? { ...p, ...data } : p)));
+
+      const updatedProduct = await axiosInstance.get(`/product/${id}`);
+      setProducts(
+        products.map((product) =>
+          product.id === id ? updatedProduct.data : product
+        )
+      );
+
       toast.success("Product updated successfully");
     } catch (err) {
       toast.error("Failed to update product. Please try again.");
@@ -109,7 +124,10 @@ export default function ProductsPage() {
   const handleDeleteProduct = async (id: string) => {
     try {
       await axiosInstance.delete(`/product/${id}`);
-      setProducts(products.filter((p) => p.id !== id));
+
+      const refreshedProducts = await axiosInstance.get("/product");
+      setProducts(refreshedProducts.data);
+
       toast.success("Product deleted successfully");
     } catch (err) {
       toast.error("Failed to delete product");
