@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import Fuse from "fuse.js";
 import axiosInstance from "@/api/axiosInstance";
 
 import { DashboardHeader } from "@/pages/admin/dashboard/components/header";
@@ -8,6 +9,9 @@ import { OrderTable } from "@/pages/admin/dashboard/orders/components/order-tabl
 
 interface Order {
   id: string;
+  shippingFirstName: string;
+  shippingLastName: string;
+  shippingEmail: string;
   shippingAddress: string;
   shippingCity: string;
   shippingZip: string;
@@ -19,6 +23,16 @@ interface Order {
   createdAt: string;
   updatedAt: string;
   userId: string;
+  orderItems: {
+    id: string;
+    orderId: string;
+    productId: string;
+    quantity: number;
+    price: number;
+    product: {
+      name: string;
+    };
+  }[];
 }
 
 export default function OrdersPage() {
@@ -27,14 +41,34 @@ export default function OrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Create Fuse.js instance for fuzzy search
+  const fuse = useMemo(() => {
+    const options = {
+      keys: [
+        "id",
+        "shippingAddress",
+        "shippingCity",
+        "paymentStatus",
+        "shippingPhone",
+        "shippingNotes",
+        "userId",
+      ],
+      includeScore: true,
+      threshold: 0.4, // Adjust for more/less strict matching
+      minMatchCharLength: 2,
+      ignoreLocation: true,
+    };
+
+    return new Fuse(orders, options);
+  }, [orders]);
+
   // Fetch orders from API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         const response = await axiosInstance.get("/orders");
-        
-        // Handle both possible response structures
+
         setOrders(response.data.data || response.data);
         setError(null);
       } catch (err) {
@@ -49,15 +83,13 @@ export default function OrdersPage() {
     fetchData();
   }, []);
 
-  // Filter orders based on search query
-  const filteredOrders = orders.filter(
-    (order) =>
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.shippingAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.shippingCity.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.paymentStatus.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.shippingPhone.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter orders using Fuse.js
+  const filteredOrders = useMemo(() => {
+    if (!searchQuery) return orders;
+
+    const results = fuse.search(searchQuery);
+    return results.map((result) => result.item);
+  }, [searchQuery, orders, fuse]);
 
   return (
     <DashboardShell>

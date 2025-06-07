@@ -1,4 +1,4 @@
-import {Link} from "react-router-dom"
+import { Link } from "react-router-dom";
 
 export default function Footer() {
   return (
@@ -8,7 +8,10 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Brand Column */}
           <div className="space-y-4 flex flex-col items-center text-center sm:items-start sm:text-left col-span-1">
-            <Link to="/" className="flex items-center gap-2 justify-center sm:justify-start">
+            <Link
+              to="/"
+              className="flex items-center gap-2 justify-center sm:justify-start"
+            >
               <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-red-100">
                 <img
                   src="/placeholder.svg?height=40&width=40"
@@ -19,8 +22,8 @@ export default function Footer() {
               <span className="text-xl font-bold">GM Candra Mebel</span>
             </Link>
             <p className="text-sm text-gray-500 max-w-xs">
-              Premium quality furniture for your home. From stylish tables to comfortable sofas, all designed with
-              care.
+              Premium quality furniture for your home. From stylish tables or
+              doors, all designed with care.
             </p>
           </div>
 
@@ -30,13 +33,22 @@ export default function Footer() {
               Navigation
             </h3>
             <nav className="flex flex-col space-y-3">
-              <Link to="/" className="text-sm text-gray-500 hover:text-red-500 transition-colors">
+              <Link
+                to="/"
+                className="text-sm text-gray-500 hover:text-red-500 transition-colors"
+              >
                 Home
               </Link>
-              <Link to="/product" className="text-sm text-gray-500 hover:text-red-500 transition-colors">
+              <Link
+                to="/product"
+                className="text-sm text-gray-500 hover:text-red-500 transition-colors"
+              >
                 Shop
               </Link>
-              <Link to="/login" className="text-sm text-gray-500 hover:text-red-500 transition-colors">
+              <Link
+                to="/login"
+                className="text-sm text-gray-500 hover:text-red-500 transition-colors"
+              >
                 Login
               </Link>
             </nav>
@@ -81,7 +93,9 @@ export default function Footer() {
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                   <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
-                <span className="text-sm text-gray-500">info@gmcandra.com</span>
+                <span className="text-sm text-gray-500">
+                  support@gmcandramebel.shop
+                </span>
               </div>
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <svg
@@ -99,7 +113,9 @@ export default function Footer() {
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                   <circle cx="12" cy="10" r="3"></circle>
                 </svg>
-                <span className="text-sm text-gray-500">Jl. Mebel Indah No. 123, Jakarta</span>
+                <span className="text-sm text-gray-500">
+                  Jl. Komodor Yos Sudarso, Pontianak Barat, Pontianak 78113
+                </span>
               </div>
             </div>
           </div>
@@ -113,11 +129,11 @@ export default function Footer() {
         {/* Bottom Footer */}
         <div className="flex justify-center max-w-6xl mx-auto">
           <p className="text-sm text-gray-500 text-center">
-            &copy; {new Date().getFullYear()} GM Candra Mebel. All rights reserved.
+            &copy; {new Date().getFullYear()} GM Candra Mebel. All rights
+            reserved.
           </p>
         </div>
       </div>
     </footer>
-  )
+  );
 }
-

@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PlusCircle } from "lucide-react";
+import Fuse from "fuse.js";
 import axiosInstance from "@/api/axiosInstance";
 import toast from "react-hot-toast";
 
@@ -23,6 +24,22 @@ export default function CategoriesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Create Fuse.js instance for fuzzy search
+  const fuse = useMemo(() => {
+    const options = {
+      keys: [
+        'name',
+        'id'
+      ],
+      includeScore: true,
+      threshold: 0.3, // More strict matching for categories
+      minMatchCharLength: 2,
+      ignoreLocation: true, // Search anywhere in the string
+    };
+    
+    return new Fuse(categories, options);
+  }, [categories]);
+
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -40,6 +57,14 @@ export default function CategoriesPage() {
       setIsLoading(false);
     }
   };
+
+  // Filter categories using Fuse.js
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery) return categories;
+    
+    const results = fuse.search(searchQuery);
+    return results.map(result => result.item);
+  }, [searchQuery, categories, fuse]);
 
   const handleCreateCategory = async (categoryData: { name: string }) => {
     try {
@@ -107,13 +132,17 @@ export default function CategoriesPage() {
           </div>
         ) : (
           <CategoryTable
-            categories={categories}
+            categories={filteredCategories}
             onUpdate={handleUpdateCategory}
             onDelete={handleDeleteCategory}
           />
         )}
       </div>
-      <CategoryCreateDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} onSubmit={handleCreateCategory} />
+      <CategoryCreateDialog 
+        open={isCreateDialogOpen} 
+        onOpenChange={setIsCreateDialogOpen} 
+        onSubmit={handleCreateCategory} 
+      />
     </DashboardShell>
   );
 }

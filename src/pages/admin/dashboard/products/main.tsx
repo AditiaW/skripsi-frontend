@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PlusCircle } from "lucide-react";
+import Fuse from "fuse.js";
 import axiosInstance from "@/api/axiosInstance";
 import { DashboardHeader } from "@/pages/admin/dashboard/components/header";
 import { DashboardShell } from "@/pages/admin/dashboard/components/shell";
@@ -37,6 +38,24 @@ export default function ProductsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Create Fuse.js instance with improved options
+  const fuse = useMemo(() => {
+    const options = {
+      keys: [
+        { name: "name", weight: 0.5 },
+        { name: "description", weight: 0.3 },
+        { name: "category.name", weight: 0.2 },
+      ],
+      includeScore: true,
+      threshold: 0.4,
+      minMatchCharLength: 2,
+      ignoreLocation: true,
+      shouldSort: true,
+    };
+
+    return new Fuse(products, options);
+  }, [products]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -49,7 +68,7 @@ export default function ProductsPage() {
         setProducts(
           productsRes.data.map((p: any) => ({
             ...p,
-            category: p.category,
+            category: p.category || { id: "", name: "Uncategorized" },
           }))
         );
         setCategories(categoriesRes.data);
@@ -66,6 +85,7 @@ export default function ProductsPage() {
     try {
       const res = await axiosInstance.post("/product", {
         ...data,
+        category: data.categoryId ? { id: data.categoryId } : null,
       });
 
       setProducts([...products, res.data]);
@@ -96,12 +116,16 @@ export default function ProductsPage() {
     }
   };
 
-  const filteredProducts = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products;
+
+    const results = fuse.search(searchQuery);
+    return results.map((result) => result.item);
+  }, [searchQuery, products, fuse]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
 
   return (
     <DashboardShell>
@@ -120,25 +144,30 @@ export default function ProductsPage() {
           <Input
             placeholder="Search product..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
+            className="focus-visible:ring-2 focus-visible:ring-primary"
           />
         </div>
 
         {isLoading ? (
           <div className="text-center py-8">Loading products...</div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-8">
-            {products.length === 0
-              ? "No products available"
-              : "No search results found"}
-          </div>
         ) : (
-          <ProductTable
-            products={filteredProducts}
-            categories={categories}
-            onUpdate={handleUpdateProduct}
-            onDelete={handleDeleteProduct}
-          />
+          <>
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-8">
+                {products.length === 0
+                  ? "No products available. Create your first product!"
+                  : "No products match your search. Try different keywords."}
+              </div>
+            ) : (
+              <ProductTable
+                products={filteredProducts}
+                categories={categories}
+                onUpdate={handleUpdateProduct}
+                onDelete={handleDeleteProduct}
+              />
+            )}
+          </>
         )}
       </div>
 

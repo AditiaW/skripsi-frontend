@@ -3,15 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ShoppingCart,
   Search,
-  TruckIcon,
   ShieldCheck,
   Clock,
   CreditCard,
+  ArrowRight,
+  Info,
 } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import toast from "react-hot-toast";
 import { Product } from "@/types";
 import axiosInstance from "@/api/axiosInstance";
+import HeroImage from "@/assets/hero.png";
 
 export default function Homepage() {
   const navigate = useNavigate();
@@ -25,10 +27,17 @@ export default function Homepage() {
         const response = await axiosInstance.get("/product");
         const products = response.data;
 
+        const sortedProducts = [...products].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        const latestProducts = sortedProducts.slice(0, 4);
+
         console.log("✅ Data from API:", products.length, "items");
 
         // 🛠 Store in state
-        setNewestProducts(products);
+        setNewestProducts(latestProducts);
 
         // 💾 Store in Cache Storage
         const cache = await caches.open("products-cache");
@@ -54,15 +63,22 @@ export default function Homepage() {
 
             if (cachedResponse) {
               const cachedData = await cachedResponse.json();
+              const sortedCache = [...cachedData].sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+              );
+              const latestCache = sortedCache.slice(0, 4);
+
               console.log(
-                "✅ Data retrieved from cache:",
-                cachedData.length,
+                "✅ Latest 4 products from cache:",
+                latestCache.length,
                 "items"
               );
 
               // Ensure data format is an array for UI rendering
               if (Array.isArray(cachedData)) {
-                setNewestProducts(cachedData);
+                setNewestProducts(latestCache);
               } else {
                 console.log(
                   "⚠️ Cached data is not an array, cannot render:",
@@ -129,9 +145,9 @@ export default function Homepage() {
             </div>
             <div className="relative h-[200px] xs:h-[250px] sm:h-[300px] lg:h-[400px] rounded-xl overflow-hidden mt-4 lg:mt-0">
               <img
-                src="/placeholder.svg?height=500&width=600"
+                src={HeroImage || "/placeholder.svg"}
                 alt="Furniture showcase"
-                className="w-full h-full object-cover"
+                className="w-full max-w-[600px] h-full max-h-[500px] object-cover"
               />
             </div>
           </div>
@@ -139,61 +155,123 @@ export default function Homepage() {
       </section>
 
       {/* Newest Products */}
-      <section className="py-8 md:py-12">
+      <section className="py-12 md:py-16 bg-gradient-to-b from-gray-50/50 to-white">
         <div className="container mx-auto px-4 md:px-6">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-center mb-6 md:mb-8">
-            Newest Products
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 xs:gap-4 md:gap-6">
-            {newestProducts.map((product) => (
-              <div className="group relative">
-                <div className="aspect-square overflow-hidden rounded-lg bg-white border border-gray-200">
+          {/* Section Header */}
+          <div className="text-center mb-10 md:mb-12">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-gray-900 mb-3">
+              Newest Products
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto text-sm md:text-base">
+              Discover our latest collection of carefully curated products
+            </p>
+          </div>
+
+          {/* Products Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
+            {newestProducts.map((product, index) => (
+              <div
+                key={product.id}
+                className="group relative bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-gray-200"
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                }}
+              >
+                {/* Product Image Container */}
+                <div className="relative aspect-square overflow-hidden bg-gray-50">
                   <img
                     src={product.image || "/placeholder.svg"}
                     alt={product.name}
                     width={300}
                     height={300}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                    className="h-full w-full object-cover transition-all duration-500 group-hover:scale-110"
+                    loading="lazy"
                   />
-                  <div className="absolute top-2 right-2 md:top-4 md:right-4 flex flex-col gap-2 z-10 pointer-events-auto">
+
+                  {/* Overlay gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  {/* Action Buttons */}
+                  <div className="absolute top-3 right-3 z-20 flex flex-col gap-2">
                     <button
                       onClick={() => handleQuickView(product.id)}
-                      className="h-7 w-7 md:h-8 md:w-8 rounded-full bg-white/80 flex items-center justify-center shadow-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white"
+                      className="h-8 w-8 md:h-9 md:w-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 hover:bg-white hover:scale-110"
+                      aria-label={`Quick view ${product.name}`}
                     >
-                      <Search className="h-3 w-3 md:h-4 md:w-4" />
-                      <span className="sr-only">Quick view</span>
+                      <Search className="h-4 w-4 text-gray-700" />
                     </button>
                   </div>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+
+                  {/* Add to Cart Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 translate-y-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 z-10">
                     <button
                       onClick={() => handleAddToCart(product)}
-                      className="inline-flex items-center justify-center rounded-md bg-red-500 px-3 py-2 text-xs md:text-sm font-medium text-white shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                      className="inline-flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 active:bg-red-700 px-4 py-2.5 md:px-6 md:py-3 text-sm md:text-base font-medium text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 backdrop-blur-sm"
                     >
-                      <ShoppingCart className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+                      <ShoppingCart className="mr-2 h-4 w-4" />
                       Add to Cart
                     </button>
                   </div>
+
+                  {/* New Badge */}
+                  <div className="absolute top-3 left-3 z-20">
+                    <span className="inline-block px-2.5 py-1 text-xs font-semibold bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full shadow-sm">
+                      New
+                    </span>
+                  </div>
                 </div>
-                <div className="mt-3 md:mt-4 space-y-1 text-center">
-                  <span className="inline-block px-2 py-1 text-xs rounded-full border border-gray-200 mb-1 md:mb-2">
-                    {product.category.name}
-                  </span>
-                  <h3 className="text-xs sm:text-sm md:text-base font-medium truncate">
+
+                {/* Product Info */}
+                <div className="p-4 md:p-5 space-y-3">
+                  {/* Category */}
+                  <div className="mb-2">
+                    <span className="inline-block px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">
+                      {product.category.name}
+                    </span>
+                  </div>
+
+                  {/* Product Name */}
+                  <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors duration-200">
                     {product.name}
                   </h3>
-                  <div className="flex justify-center gap-2">
-                    <span className="text-xs md:text-sm font-medium text-red-500">
+
+                  {/* Price */}
+                  <div className="mb-3">
+                    <span className="text-lg md:text-xl font-bold text-red-500">
                       {formatPrice(product.price)}
                     </span>
+                  </div>
+
+                  {/* Stock Quantity */}
+                  {product.quantity !== undefined && (
+                    <div className="text-xs text-gray-500">
+                      Stock: {product.quantity}
+                    </div>
+                  )}
+
+                  {/* View Details Button */}
+                  <div className="pt-2">
+                    <button
+                      onClick={() => handleQuickView(product.id)}
+                      className="w-full inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white hover:bg-gray-50 hover:border-red-200 px-4 py-2 text-sm font-medium text-gray-700 hover:text-red-600 shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.02]"
+                    >
+                      <Info className="mr-2 h-4 w-4" />
+                      View Details
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          <div className="mt-8 md:mt-10 text-center">
-            <button className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 h-10 sm:h-11">
-              View All Products
-            </button>
+
+          {/* View All Button */}
+          <div className="mt-12 md:mt-16 text-center">
+            <Link to="/product">
+              <button className="group inline-flex items-center justify-center rounded-full border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-red-200 px-8 py-3 text-base font-semibold text-gray-700 hover:text-red-600 shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-105">
+                View All Products
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -204,19 +282,7 @@ export default function Homepage() {
           <h2 className="text-xl md:text-2xl font-bold tracking-tight text-center mb-6 md:mb-8">
             Why Choose GM Candra Mebel
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="flex flex-col items-center text-center p-4 md:p-6">
-                <TruckIcon className="h-8 w-8 md:h-10 md:w-10 mb-3 md:mb-4 text-red-500" />
-                <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2">
-                  Free Shipping
-                </h3>
-                <p className="text-xs md:text-sm text-gray-500">
-                  On orders over Rp 2,000,000. Get your furniture delivered to
-                  your doorstep.
-                </p>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
               <div className="flex flex-col items-center text-center p-4 md:p-6">
                 <ShieldCheck className="h-8 w-8 md:h-10 md:w-10 mb-3 md:mb-4 text-red-500" />

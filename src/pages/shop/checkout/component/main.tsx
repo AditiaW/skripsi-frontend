@@ -44,8 +44,7 @@ export default function CheckoutPage() {
   };
 
   const subtotal = getTotalPrice();
-  const shipping = 50000;
-  const total = subtotal + shipping;
+  const total = subtotal;
 
   useEffect(() => {
     const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
@@ -106,7 +105,6 @@ export default function CheckoutPage() {
           quantity: item.quantity,
         })),
         subtotal,
-        shipping,
         total,
       };
       console.log("Orders Data: ", orderData);
@@ -432,10 +430,6 @@ export default function CheckoutPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600">Subtotal</span>
                     <span className="font-medium">{formatPrice(subtotal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Shipping</span>
-                    <span className="font-medium">{formatPrice(shipping)}</span>
                   </div>
                   <div className="border-t border-gray-200 pt-3 mt-3"></div>
                   <div className="flex items-center justify-between font-medium text-lg">

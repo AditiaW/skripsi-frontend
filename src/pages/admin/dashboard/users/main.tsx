@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PlusCircle } from "lucide-react";
+import Fuse from "fuse.js";
 import axiosInstance from "@/api/axiosInstance";
 import toast from "react-hot-toast";
 
@@ -14,6 +15,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  password: string;
   role: "ADMIN" | "USER";
   resetToken: string | null;
   resetTokenExpiry: string | null;
@@ -26,6 +28,25 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Create Fuse.js instance for fuzzy search
+  const fuse = useMemo(() => {
+    const options = {
+      keys: [
+        'name',
+        'email',
+        'role',
+        'id'
+      ],
+      includeScore: true,
+      threshold: 0.4, 
+      minMatchCharLength: 2,
+      ignoreLocation: true,
+      shouldSort: true, 
+    };
+    
+    return new Fuse(users, options);
+  }, [users]);
 
   useEffect(() => {
     fetchUsers();
@@ -45,12 +66,13 @@ export default function UsersPage() {
     }
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter users using Fuse.js
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery) return users;
+    
+    const results = fuse.search(searchQuery);
+    return results.map(result => result.item);
+  }, [searchQuery, users, fuse]);
 
   const handleCreateUser = async (userData: {
     name: string;
@@ -72,7 +94,7 @@ export default function UsersPage() {
   const handleUpdateUser = async (id: string, userData: Partial<User>) => {
     try {
       await axiosInstance.patch(`/users/${id}`, userData);
-      fetchUsers()
+      fetchUsers();
       toast.success("User updated successfully!");
     } catch (err) {
       console.error("Failed to update user:", err);
@@ -122,6 +144,7 @@ export default function UsersPage() {
             users={filteredUsers}
             onUpdate={handleUpdateUser}
             onDelete={handleDeleteUser}
+            searchTerm={searchQuery}
           />
         )}
       </div>

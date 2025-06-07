@@ -52,8 +52,7 @@ export default function CartPage() {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const shipping = 20000;
-  const total = subtotal + shipping;
+  const total = subtotal;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -218,10 +217,6 @@ export default function CartPage() {
                       items)
                     </span>
                     <span className="font-medium">{formatPrice(subtotal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Shipping</span>
-                    <span>{formatPrice(shipping)}</span>
                   </div>
                   <div className="border-t border-gray-100 pt-4 mt-4"></div>
                   <div className="flex items-center justify-between font-medium text-base sm:text-lg">
