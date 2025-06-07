@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "postinstall": "npm rebuild rollup",
     "generate-pwa-assets": "npx pwa-assets-generator --preset minimal-2023 public/shop.png"
   },
   "dependencies": {
