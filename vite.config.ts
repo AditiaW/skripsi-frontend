@@ -101,7 +101,8 @@ export default defineConfig({
         ],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        skipWaiting: false
+        skipWaiting: false,
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024
       },
       devOptions: {
         enabled: true,
