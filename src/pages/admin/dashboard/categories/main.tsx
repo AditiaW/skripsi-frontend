@@ -34,7 +34,7 @@ export default function CategoriesPage() {
       includeScore: true,
       threshold: 0.3, // More strict matching for categories
       minMatchCharLength: 2,
-      ignoreLocation: true, // Search anywhere in the string
+      ignoreLocation: true,
     };
     
     return new Fuse(categories, options);
@@ -135,6 +135,7 @@ export default function CategoriesPage() {
             categories={filteredCategories}
             onUpdate={handleUpdateCategory}
             onDelete={handleDeleteCategory}
+            searchTerm={searchQuery}
           />
         )}
       </div>

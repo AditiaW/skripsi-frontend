@@ -1,12 +1,9 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { requestForToken, onMessageListener } from "@/firebase/firebase";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import useAuthStore from "@/store/authStore";
@@ -33,44 +30,6 @@ const LoginPage = () => {
     defaultValues: { email: "", password: "" },
   });
 
-  const handleFCMNotification = (payload: any) => {
-    toast.custom((t) => (
-      <div className="bg-white p-4 shadow-lg rounded-lg">
-        <h3 className="font-bold">{payload.notification?.title}</h3>
-        <p>{payload.notification?.body}</p>
-        {payload.data?.orderId && (
-          <Button 
-            size="sm" 
-            className="mt-2"
-            onClick={() => {
-              navigate(`/orders/${payload.data.orderId}`);
-              toast.dismiss(t.id);
-            }}
-          >
-            View Order
-          </Button>
-        )}
-      </div>
-    ));
-  };
-
-  const setupFCM = async () => {
-    try {
-      const token = await requestForToken();
-      if (!token) return;
-
-      await axiosInstance.post('/users/fcm-token', { token }, {
-        headers: { Authorization: `Bearer ${useAuthStore.getState().token}` }
-      });
-
-      onMessageListener()
-        .then(handleFCMNotification)
-        .catch(err => console.error('Message listener error:', err));
-    } catch (err) {
-      console.error('FCM setup error:', err);
-    }
-  };
-
   const handleLogin = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     setError("");
@@ -82,8 +41,7 @@ const LoginPage = () => {
       }, { timeout: 5000 });
 
       useAuthStore.getState().login(token);
-      await setupFCM();
-      toast.success("Login successful! Welcome back!");
+      toast.success("Login berhasil! Welcome back!");
       navigate("/");
     } catch (err) {
       setError(
@@ -95,12 +53,6 @@ const LoginPage = () => {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (useAuthStore.getState().isAuthenticated) {
-      setupFCM();
-    }
-  }, []);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 p-4">

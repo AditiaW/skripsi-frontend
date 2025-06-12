@@ -18,42 +18,60 @@ export default function ProductDetail() {
     const fetchProduct = async () => {
       try {
         const response = await axiosInstance.get(`/product/${id}`);
-        const productData: Product = response.data;
-        setProduct(productData);
-        const cache = await caches.open("products-cache");
-        const cacheResponse = new Response(JSON.stringify(productData), {
-          headers: { "Content-Type": "application/json" },
-        });
+        const productData = response.data;
 
-        await cache.put(`/product/${id}`, cacheResponse);
-      } catch (err) {
-        console.error("Error fetching product:", err);
+        if (productData) {
+          setProduct(productData);
+          await cacheProductData(id, productData);
+          preloadImage(productData);
+        }
+      } catch (err: any) {
+        console.error("❌ Error fetching product:", err);
 
         if (!navigator.onLine || err.message === "Network Error") {
-          console.log("⚡ Offline mode - Attempting to retrieve from cache...");
-          try {
-            const cache = await caches.open("products-cache");
-            const cachedResponse = await cache.match(`/product/${id}`);
+          console.log("⚡ Offline - mencoba ambil data produk dari cache...");
+          const cachedData = await getCachedProduct(id);
 
-            if (cachedResponse) {
-              const cachedData: Product = await cachedResponse.json();
-              console.log("✅ Data retrieved from cache:", cachedData);
-
-              setProduct(cachedData);
-            } else {
-              console.log("❌ No data found in cache");
-              setError("Product not found in cache");
-            }
-          } catch (cacheErr) {
-            console.error("❌ Error accessing cache:", cacheErr);
-            setError("Cache error");
+          if (cachedData) {
+            setProduct(cachedData);
+          } else {
+            setError("Produk tidak tersedia di cache.");
+            console.warn("📭 Tidak ada cache untuk produk:", id);
           }
+        } else {
+          setError("Gagal memuat produk.");
         }
       }
     };
 
     fetchProduct();
   }, [id]);
+
+  const cacheProductData = async (id: string, product: Product) => {
+    const cache = await caches.open("products-cache");
+    const response = new Response(JSON.stringify(product), {
+      headers: { "Content-Type": "application/json" },
+    });
+    await cache.put(`/product/${id}`, response);
+  };
+
+  const getCachedProduct = async (id: string): Promise<Product | null> => {
+    try {
+      const cache = await caches.open("products-cache");
+      const cachedResponse = await cache.match(`/product/${id}`);
+      return cachedResponse ? await cachedResponse.json() : null;
+    } catch (err) {
+      console.error("❌ Gagal akses cache:", err);
+      return null;
+    }
+  };
+
+  const preloadImage = (url?: string) => {
+    if (url) {
+      const img = new Image();
+      img.src = url;
+    }
+  };
 
   const incrementQuantity = () => {
     if (product && quantity < product.quantity) {
@@ -70,7 +88,9 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (product) {
       addToCart(product, quantity);
-      toast.success(`${quantity} ${product.name} added to cart!`);
+      toast.success(
+        `${quantity} ${product.name} berhasil ditambahkan ke keranjang.`
+      );
     }
   };
 
@@ -87,7 +107,7 @@ export default function ProductDetail() {
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-2xl font-bold mb-4">Product not found</h1>
         <p className="text-gray-500 mb-8">
-          The product you are looking for does not exist.
+          Produk yang kamu cari tidak tersedia.
         </p>
         <button
           onClick={() => navigate("/product")}
@@ -135,7 +155,9 @@ export default function ProductDetail() {
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
               {product.name}
             </h1>
-            <p className="mt-1 text-sm text-gray-500">{product.category.name}</p>
+            <p className="mt-1 text-sm text-gray-500">
+              {product.category.name}
+            </p>
           </div>
 
           <div className="text-2xl md:text-3xl font-bold text-red-500">

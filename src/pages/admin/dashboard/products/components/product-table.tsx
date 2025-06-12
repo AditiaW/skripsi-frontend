@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,7 @@ interface ProductTableProps {
   categories: Array<{ id: string; name: string }>;
   onUpdate: (id: string, data: Partial<Product>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  searchTerm?: string;
 }
 
 export function ProductTable({
@@ -64,12 +65,17 @@ export function ProductTable({
   categories,
   onUpdate,
   onDelete,
+  searchTerm
 }: ProductTableProps) {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
+  useEffect(() => {
+      setCurrentPage(1);
+    }, [searchTerm]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("id-ID", {

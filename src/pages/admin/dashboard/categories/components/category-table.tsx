@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -49,12 +49,14 @@ interface CategoryTableProps {
   categories: Category[];
   onUpdate: (id: string, data: Partial<Category>) => void;
   onDelete: (id: string) => void;
+  searchTerm?: string;
 }
 
 export function CategoryTable({
   categories,
   onUpdate,
   onDelete,
+  searchTerm,
 }: CategoryTableProps) {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -62,6 +64,10 @@ export function CategoryTable({
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
@@ -100,7 +106,10 @@ export function CategoryTable({
   const totalPages = Math.ceil(categories.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedCategories = categories.slice(indexOfFirstItem, indexOfLastItem);
+  const paginatedCategories = categories.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -112,7 +121,7 @@ export function CategoryTable({
   const getVisiblePages = () => {
     const visiblePages = [];
     const maxVisiblePages = 5; // Maximum number of page buttons to show
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         visiblePages.push(i);
@@ -121,22 +130,22 @@ export function CategoryTable({
       const half = Math.floor(maxVisiblePages / 2);
       let start = currentPage - half;
       let end = currentPage + half;
-      
+
       if (start < 1) {
         start = 1;
         end = maxVisiblePages;
       }
-      
+
       if (end > totalPages) {
         end = totalPages;
         start = totalPages - maxVisiblePages + 1;
       }
-      
+
       for (let i = start; i <= end; i++) {
         visiblePages.push(i);
       }
     }
-    
+
     return visiblePages;
   };
 

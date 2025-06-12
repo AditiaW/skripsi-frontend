@@ -115,7 +115,7 @@ export default function OrdersPage() {
             <p>Loading orders...</p>
           </div>
         ) : (
-          <OrderTable orders={filteredOrders} />
+          <OrderTable orders={filteredOrders} searchTerm={searchQuery} />
         )}
       </div>
     </DashboardShell>

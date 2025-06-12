@@ -10,13 +10,13 @@ import toast from "react-hot-toast";
 
 // Define validation schema with Zod
 const checkoutSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().min(10, "Phone number must be at least 10 characters"),
-  address: z.string().min(1, "Address is required"),
-  city: z.string().min(1, "City is required"),
-  zip: z.string().min(1, "ZIP code is required"),
+  firstName: z.string().min(1, "Nama depan wajib diisi"),
+  lastName: z.string().min(1, "Nama belakang wajib diisi"),
+  email: z.string().email("Alamat email tidak valid"),
+  phone: z.string().min(10, "Nomor telepon minimal 10 digit"),
+  address: z.string().min(1, "Alamat tujuan wajib diisi"),
+  city: z.string().min(1, "Kota wajib diisi"),
+  zip: z.string().min(1, "Kode pos wajib diisi"),
   notes: z.string().optional(),
 });
 
@@ -47,42 +47,37 @@ export default function CheckoutPage() {
   const total = subtotal;
 
   useEffect(() => {
-    const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
-    const clientKey =
-      import.meta.env.VITE_MIDTRANS_CLIENT; 
+    const snapScriptUrl = "https://app.sandbox.midtrans.com/snap/snap.js";
+    const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT;
 
-    // Check if the script is already loaded
-    if (!document.querySelector(`script[src="${snapScript}"]`)) {
-      const script = document.createElement("script");
-      script.src = snapScript;
-      script.setAttribute("data-client-key", clientKey);
-      script.async = true;
+    const existingScript = document.querySelector(
+      `script[src="${snapScriptUrl}"]`
+    );
+    if (existingScript) return;
 
-      // Set a callback when the script is loaded
-      script.onload = () => {
-        console.log("Midtrans Snap script loaded");
-        // setScriptLoaded(true);
-      };
+    const script = document.createElement("script");
+    script.src = snapScriptUrl;
+    script.async = true;
+    script.setAttribute("data-client-key", clientKey);
 
-      // Handle script loading errors
-      script.onerror = () => {
-        console.error("Failed to load Midtrans Snap script");
-      };
+    script.onload = () => {
+      console.log("✅ Midtrans Snap script loaded");
+    };
 
-      document.body.appendChild(script);
+    script.onerror = () => {
+      console.error("❌ Failed to load Midtrans Snap script");
+    };
 
-      return () => {
-        document.body.removeChild(script);
-      };
-    } else {
-      // If the script is already loaded, set the state to true
-      // setScriptLoaded(true);
-    }
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (items.length === 0) {
-      toast.error("Your cart is empty");
+      toast.error("Keranjangmu masih kosong.");
       return;
     }
 
@@ -111,7 +106,7 @@ export default function CheckoutPage() {
       // 2. Add authentication header
       const token = localStorage.getItem("token");
       if (!token) {
-        toast.error("You are not authenticated. Please login first.");
+        toast.error("Kamu belum login. Silakan masuk terlebih dahulu.");
         return;
       }
       const response = await axiosInstance.post(
@@ -119,7 +114,7 @@ export default function CheckoutPage() {
         orderData,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // Or your auth token
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
@@ -146,9 +141,7 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       if (error.response?.data?.message?.includes("not found")) {
-        // Refresh product list or clear cart
-        toast.error("Some products are no longer available");
-        // Consider: fetchProducts(); or clearCart();
+        toast.error("Beberapa produk tidak lagi tersedia.");
       } else {
         toast.error(error.response?.data?.message || "Checkout failed");
       }
@@ -160,9 +153,9 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
+        <h1 className="text-2xl font-bold mb-4">Keranjangmu masih kosong</h1>
         <p className="text-gray-500 mb-8">
-          Add some products to your cart before checking out.
+          Tambahkan produk ke keranjang sebelum melanjutkan ke pembayaran.
         </p>
         <Link
           to="/shop"
@@ -211,7 +204,7 @@ export default function CheckoutPage() {
                     <input
                       id="firstName"
                       type="text"
-                      placeholder="John"
+                      placeholder="Budi"
                       className={`w-full rounded-md border ${
                         errors.firstName ? "border-red-500" : "border-gray-300"
                       } py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500`}
@@ -233,7 +226,7 @@ export default function CheckoutPage() {
                     <input
                       id="lastName"
                       type="text"
-                      placeholder="Doe"
+                      placeholder="Santoso"
                       className={`w-full rounded-md border ${
                         errors.lastName ? "border-red-500" : "border-gray-300"
                       } py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500`}
@@ -256,7 +249,7 @@ export default function CheckoutPage() {
                   <input
                     id="email"
                     type="email"
-                    placeholder="john.doe@example.com"
+                    placeholder="budi.santoso@email.com"
                     className={`w-full rounded-md border ${
                       errors.email ? "border-red-500" : "border-gray-300"
                     } py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500`}
@@ -278,7 +271,7 @@ export default function CheckoutPage() {
                   <input
                     id="phone"
                     type="tel"
-                    placeholder="(123) 456-7890"
+                    placeholder="08xxxxxxxxxx"
                     className={`w-full rounded-md border ${
                       errors.phone ? "border-red-500" : "border-gray-300"
                     } py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500`}
@@ -300,7 +293,7 @@ export default function CheckoutPage() {
                   <input
                     id="address"
                     type="text"
-                    placeholder="123 Main St"
+                    placeholder="Jl. Yos Sudarso No. 88"
                     className={`w-full rounded-md border ${
                       errors.address ? "border-red-500" : "border-gray-300"
                     } py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500`}
@@ -323,7 +316,7 @@ export default function CheckoutPage() {
                     <input
                       id="city"
                       type="text"
-                      placeholder="New York"
+                      placeholder="Pontianak"
                       className={`w-full rounded-md border ${
                         errors.city ? "border-red-500" : "border-gray-300"
                       } py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500`}
@@ -345,7 +338,7 @@ export default function CheckoutPage() {
                     <input
                       id="zip"
                       type="text"
-                      placeholder="10001"
+                      placeholder="78110"
                       className={`w-full rounded-md border ${
                         errors.zip ? "border-red-500" : "border-gray-300"
                       } py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500`}
@@ -375,7 +368,7 @@ export default function CheckoutPage() {
                 </label>
                 <textarea
                   id="notes"
-                  placeholder="Special instructions for delivery or any other information"
+                  placeholder="Ada catatan lain? Tuliskan di sini."
                   className="w-full min-h-[100px] rounded-md border border-gray-300 py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                   {...register("notes")}
                 />

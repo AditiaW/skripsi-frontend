@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// src/types/global.d.ts
 interface Window {
     snap?: {
       pay: (

@@ -11,12 +11,12 @@ export default function OrderSuccessPage() {
         </div>
         <h1 className="text-3xl font-bold mb-2">Order Confirmed!</h1>
         <p className="text-gray-500">
-          Thank you for your purchase. Your order has been received and is being processed.
+          Terima kasih atas pesanan Anda. Pesanan telah kami terima dan sedang diproses.
         </p>
       </div>
 
       <div className="text-center space-y-4">
-        <h2 className="text-xl font-semibold">What's Next?</h2>
+        <h2 className="text-xl font-semibold">Apa selanjutnya?</h2>
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
           <Link
             to="/product"

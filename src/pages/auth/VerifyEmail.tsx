@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
@@ -57,9 +56,9 @@ export default function VerifyEmailPage() {
       if (response.data?.success && response.data.isVerified) {
         setVerificationState("already-verified");
         toast.success(
-          `Welcome back, ${
+          `Selamat datang, ${
             response.data.name || ""
-          }! Your email is already verified.`,
+          }! Alamat email ini sudah diverifikasi.`,
           {
             duration: 5000,
             position: "top-center",
@@ -79,9 +78,9 @@ export default function VerifyEmailPage() {
       // Handle different error cases
       if (err.response?.data?.error === "user_not_found") {
         navigate("/register");
-        toast.error("Account not found. Please register first.");
+        toast.error("Kamu belum terdaftar. Silakan registrasi untuk melanjutkan.");
       } else {
-        toast.error("Failed to check verification status. Please try again.");
+        toast.error("Gagal memeriksa status verifikasi. Please try again.");
       }
       return false;
     }
@@ -109,7 +108,7 @@ export default function VerifyEmailPage() {
 
       if (response.status === 200 && response.data?.success) {
         setVerificationState("success");
-        toast.success("Email verified successfully! You can now sign in.", {
+        toast.success("Email berhasil diverifikasi! Kamu sekarang bisa login.", {
           duration: 5000,
           position: "top-center",
         });
@@ -122,19 +121,19 @@ export default function VerifyEmailPage() {
 
       console.error("Email verification error:", err);
       let errorMessage =
-        "An error occurred during verification. Please try again.";
+        "Terjadi kesalahan saat proses verifikasi. Please try again.";
       let state: VerificationState = "error";
 
       if (err.response?.data?.error === "invalid_or_expired_token") {
         state = "expired";
         errorMessage =
-          "This verification link has expired or is invalid. Please request a new verification email.";
+          "Tautan verifikasi sudah kedaluwarsa atau tidak valid. Silakan minta tautan baru.";
       } else if (
         err.response?.status === 400 &&
-        err.response?.data?.message === "User is already verified"
+        err.response?.data?.message === "User sudah terverifikasi"
       ) {
         state = "already-verified";
-        errorMessage = "This email address is already verified.";
+        errorMessage = "Email address ini sudah terverifikasi.";
       } else if (err.response?.status === 500) {
         errorMessage =
           "An internal server error occurred. Please try again later.";
@@ -155,7 +154,6 @@ export default function VerifyEmailPage() {
     const verify = async () => {
       if (!token) {
         if (email) {
-          // If no token but has email, check verification status
           const isVerified = await checkVerificationStatus(
             email,
             controller.signal
@@ -184,7 +182,7 @@ export default function VerifyEmailPage() {
       setIsResending(true);
 
       if (!email) {
-        toast.error("Email not found. Please register again.", {
+        toast.error("Email tidak ditemukan. Please register again.", {
           duration: 4000,
           position: "top-center",
         });
@@ -234,7 +232,7 @@ export default function VerifyEmailPage() {
                 <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
               </div>
               <CardTitle className="mt-4 text-xl sm:text-2xl font-bold">
-                Verifying Your Email
+                Verifying Email
               </CardTitle>
               <CardDescription className="text-sm sm:text-base">
                 Please wait while we verify your email address...

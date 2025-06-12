@@ -183,6 +183,7 @@ export default function ProductsPage() {
                 categories={categories}
                 onUpdate={handleUpdateProduct}
                 onDelete={handleDeleteProduct}
+                searchTerm={searchQuery}
               />
             )}
           </>

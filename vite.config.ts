@@ -54,12 +54,14 @@ export default defineConfig({
         globPatterns: [
           '**/*.{js,css,html,ico,png,svg,woff2,woff,ttf,json}'
         ],
+
         runtimeCaching: [
+          // 📦 Produk dari API
           {
             urlPattern: /\/api\/products/,
-            handler: "NetworkFirst",
+            handler: 'NetworkFirst',
             options: {
-              cacheName: "products-cache",
+              cacheName: 'products-cache',
               networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 50,
@@ -70,39 +72,31 @@ export default defineConfig({
               },
             },
           },
+
+          // 🖼️ Gambar: Cache First
           {
-            urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
-            handler: "CacheFirst",
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: 'CacheFirst',
             options: {
-              cacheName: "google-fonts",
-              expiration: {
-                maxEntries: 4,
-                maxAgeSeconds: 365 * 24 * 60 * 60 // 1 tahun
-              }
-            }
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "images",
+              cacheName: 'images-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 30 * 24 * 60 * 60 // 30 hari
-              }
-            }
-          }
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 hari
+              },
+            },
+          },
         ],
-        navigateFallback: "/index.html",
+
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [
           /^\/api\/.*$/,
           /^\/auth\/.*$/,
-          /^\/firebase-messaging-sw\.js$/
         ],
+
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: false,
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB
       },
       devOptions: {
         enabled: true,
@@ -117,7 +111,6 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ["tunggu host deploy frontend"],
     host: true
   },
   build: {

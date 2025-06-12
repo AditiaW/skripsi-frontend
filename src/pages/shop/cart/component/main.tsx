@@ -35,17 +35,17 @@ export default function CartPage() {
   const handleUpdateQuantity = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     updateQuantity(id, newQuantity);
-    toast.success("Product quantity updated");
+    toast.success("Kuantitas produk telah diperbarui.");
   };
 
   const handleRemoveItem = (id: string) => {
     removeItem(id);
-    toast.error("Product removed from cart");
+    toast.error("Produk berhasil dihapus dari keranjang.");
   };
 
   const handleClearCart = () => {
     clearCart();
-    toast.error("All products removed");
+    toast.error("Semua produk berhasil dihapus dari keranjang.");
   };
 
   const subtotal = items.reduce(
@@ -76,11 +76,11 @@ export default function CartPage() {
               </div>
             </div>
             <h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4">
-              Your cart is empty
+              Keranjangmu masih kosong
             </h2>
             <p className="text-gray-500 mb-8 max-w-md mx-auto px-4">
-              Looks like you haven't added any products to your cart yet. Browse
-              our collection and find something you'll love.
+              Belum ada produk di keranjang. Coba cari yang kamu suka di katalog
+              kami!
             </p>
             <Link
               to="/product"

@@ -25,7 +25,7 @@ const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Auth Routes - Pengguna yang sudah login tidak dapat mengakses page ini */}
+        {/* Auth Routes - Users who are already logged in cannot access this page */}
         <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
         <Route path="/register" element={<AuthRoute><Register /></AuthRoute>} />
         <Route path="/forgot-password" element={<AuthRoute><ForgotPassword /></AuthRoute>} />
@@ -73,7 +73,7 @@ const App = () => {
           <Route path="products" element={<ProductsPage />} />
         </Route>
       </Routes>
-      <Toaster position="top-right" />
+      <Toaster position="top-center" />
     </BrowserRouter>
   );
 };

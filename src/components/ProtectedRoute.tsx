@@ -9,28 +9,26 @@ interface ProtectedRouteProps {
   requireAuth?: boolean;
 }
 
-const ProtectedRoute = ({ 
-  children, 
-  adminOnly = false, 
-  requireAuth = true 
+const ProtectedRoute = ({
+  children,
+  adminOnly = false,
+  requireAuth = true,
 }: ProtectedRouteProps) => {
   const { isAuthenticated, userRole } = useAuthStore();
   const location = useLocation();
 
   useEffect(() => {
     if (requireAuth && !isAuthenticated) {
-      toast.error("You need to login first!", { id: "auth-error" });
+      toast.error("Silakan login terlebih dahulu.", { id: "auth-error" });
     } else if (adminOnly && userRole !== "ADMIN") {
       toast.error("Unauthorized access!", { id: "admin-error" });
     }
   }, [isAuthenticated, requireAuth, adminOnly, userRole]);
 
-  // Redirect jika user belum login
   if (requireAuth && !isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Redirect jika user bukan admin
   if (adminOnly && userRole !== "ADMIN") {
     return <Navigate to="/unauthorized" replace />;
   }

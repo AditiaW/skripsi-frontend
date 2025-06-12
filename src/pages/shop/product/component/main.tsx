@@ -31,57 +31,28 @@ export default function ShopPage() {
   const productsPerPage = 8;
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchAndCacheProducts = async () => {
       try {
         const response = await axiosInstance.get("/product");
         const products = response.data;
+
         setProducts(products);
-        const cache = await caches.open("products-cache");
-        const cacheResponse = new Response(JSON.stringify(products), {
-          headers: { "Content-Type": "application/json" },
-        });
 
-        await cache.put("/product", cacheResponse);
+        await cacheProductList(products);
+        await preloadProductImages(products);
 
-        const options = {
-          keys: ["name", "category.name", "description"],
-          includeScore: true,
-          threshold: 0.4,
-          minMatchCharLength: 2,
-        };
-        setFuse(new Fuse(products, options));
+        initFuseSearch(products);
       } catch (err) {
-        console.log("Error Fetch Product: ", err);
+        console.error("❌ Error saat fetch produk:", err);
+
         if (!navigator.onLine || err.message === "Network Error") {
-          console.log("⚡ Offline mode - Attempting to retrieve from cache...");
-          try {
-            const cache = await caches.open("products-cache");
-            const cachedResponse = await cache.match("/product");
-
-            if (cachedResponse) {
-              const cachedData = await cachedResponse.json();
-              console.log(
-                "✅ Data retrieved from cache:",
-                cachedData.length,
-                "items"
-              );
-
-              if (Array.isArray(cachedData)) {
-                setProducts(cachedData);
-                const options = {
-                  keys: ["name", "category.name", "description"],
-                  includeScore: true,
-                  threshold: 0.4,
-                  minMatchCharLength: 2,
-                };
-                setFuse(new Fuse(cachedData, options));
-              }
-            } else {
-              console.log("❌ No data found in cache");
-              setProducts([]);
-            }
-          } catch (cacheErr) {
-            console.error("❌ Error accessing cache:", cacheErr);
+          console.log("⚡ Offline - mencoba ambil data dari cache...");
+          const cachedProducts = await getCachedProducts();
+          if (cachedProducts) {
+            setProducts(cachedProducts);
+            initFuseSearch(cachedProducts);
+          } else {
+            setProducts([]);
           }
         } else {
           setProducts([]);
@@ -89,7 +60,7 @@ export default function ShopPage() {
       }
     };
 
-    fetchProducts();
+    fetchAndCacheProducts();
 
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -106,10 +77,52 @@ export default function ShopPage() {
     };
   }, []);
 
+  const cacheProductList = async (products: any[]) => {
+    const cache = await caches.open("products-cache");
+    const response = new Response(JSON.stringify(products), {
+      headers: { "Content-Type": "application/json" },
+    });
+    await cache.put("/product", response);
+  };
+
+  const getCachedProducts = async () => {
+    try {
+      const cache = await caches.open("products-cache");
+      const response = await cache.match("/product");
+      if (response) {
+        const data = await response.json();
+        console.log("📦 Data dari cache:", data.length, "items");
+        return Array.isArray(data) ? data : [];
+      }
+    } catch (err) {
+      console.error("❌ Gagal ambil dari cache:", err);
+    }
+    return null;
+  };
+
+  const initFuseSearch = (data: any[]) => {
+    const options = {
+      keys: ["name", "category.name", "description"],
+      includeScore: true,
+      threshold: 0.4,
+      minMatchCharLength: 2,
+    };
+    setFuse(new Fuse(data, options));
+  };
+
+  const preloadProductImages = async (products: any[]) => {
+    products.forEach((p) => {
+      if (p.imageUrl) {
+        const img = new Image();
+        img.src = p.imageUrl;
+      }
+    });
+  };
+
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     addToCart(product);
-    toast.success(`${product.name} added to cart!`);
+    toast.success(`${product.name} berhasil ditambahkan ke keranjang.`);
   };
 
   const uniqueCategories = products.reduce((acc: Category[], product) => {
@@ -673,9 +686,8 @@ export default function ShopPage() {
                   No products found
                 </h3>
                 <p className="text-gray-600 mb-6 leading-relaxed">
-                  We couldn't find any products matching your criteria. Try
-                  adjusting your filters or search query to discover amazing
-                  products.
+                  Produk tidak ditemukan. Ubah filter atau kata kunci untuk
+                  melihat pilihan menarik lainnya.
                 </p>
                 <button
                   onClick={clearFilters}

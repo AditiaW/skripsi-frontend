@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -59,13 +59,18 @@ interface Order {
 
 interface OrderTableProps {
   orders: Order[];
+  searchTerm?: string;
 }
 
-export function OrderTable({ orders }: OrderTableProps) {
+export function OrderTable({ orders, searchTerm }: OrderTableProps) {
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
+  useEffect(() => {
+      setCurrentPage(1);
+    }, [searchTerm]);
 
   const handleView = (order: Order) => {
     setViewingOrder(order);

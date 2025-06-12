@@ -25,15 +25,13 @@ export const useCartStore = create<CartState>()(
           const existingItem = state.items.find((item) => item.id === product.id);
 
           if (existingItem) {
-            // Hitung jumlah total yang akan diperbarui
             const newQuantity = existingItem.quantity + quantity;
 
-            // Pastikan tidak melebihi stok
             if (newQuantity > product.quantity) {
               return {
                 items: state.items.map((item) =>
                   item.id === product.id
-                    ? { ...item, quantity: product.quantity } // Batasi hingga stok
+                    ? { ...item, quantity: product.quantity }
                     : item
                 ),
               };
@@ -42,13 +40,12 @@ export const useCartStore = create<CartState>()(
             return {
               items: state.items.map((item) =>
                 item.id === product.id
-                  ? { ...item, quantity: newQuantity } // Tambahkan sesuai jumlah
+                  ? { ...item, quantity: newQuantity }
                   : item
               ),
             };
           }
 
-          // Jika produk belum ada di keranjang, tambahkan dengan batas stok
           const limitedQuantity = quantity > product.quantity ? product.quantity : quantity;
           return {
             items: [...state.items, { ...product, quantity: limitedQuantity }],
@@ -71,8 +68,8 @@ export const useCartStore = create<CartState>()(
         get().items.reduce((total, item) => total + item.price * item.quantity, 0),
     }),
     {
-      name: 'cart-storage', // Nama untuk localStorage
-      storage: createJSONStorage(() => localStorage), // Gunakan createJSONStorage
+      name: 'cart-storage',
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );

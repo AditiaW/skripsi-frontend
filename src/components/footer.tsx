@@ -1,3 +1,4 @@
+import { Store } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Footer() {
@@ -12,18 +13,14 @@ export default function Footer() {
               to="/"
               className="flex items-center gap-2 justify-center sm:justify-start"
             >
-              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-red-100">
-                <img
-                  src="/placeholder.svg?height=40&width=40"
-                  alt="GM Candra Mebel Logo"
-                  className="w-full h-full object-cover"
-                />
+              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-red-100 bg-white flex items-center justify-center">
+                <Store className="w-6 h-6 text-red-500" />
               </div>
               <span className="text-xl font-bold">GM Candra Mebel</span>
             </Link>
             <p className="text-sm text-gray-500 max-w-xs">
-              Premium quality furniture for your home. From stylish tables or
-              doors, all designed with care.
+              Furnitur berkualitas premium untuk hunian. Dari meja hingga
+              pintu bergaya, semuanya dirancang dengan penuh ketelitian.
             </p>
           </div>
 

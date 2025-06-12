@@ -23,7 +23,6 @@ export default function Homepage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        // 🚀 Fetch from API
         const response = await axiosInstance.get("/product");
         const products = response.data;
 
@@ -31,32 +30,51 @@ export default function Homepage() {
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-
         const latestProducts = sortedProducts.slice(0, 4);
 
-        console.log("✅ Data from API:", products.length, "items");
-
-        // 🛠 Store in state
         setNewestProducts(latestProducts);
 
-        // 💾 Store in Cache Storage
-        const cache = await caches.open("products-cache");
-        const cacheResponse = new Response(JSON.stringify(products), {
+        const productCache = await caches.open("products-cache");
+        const productResponse = new Response(JSON.stringify(products), {
           headers: { "Content-Type": "application/json" },
         });
+        await productCache.put("/product", productResponse);
 
-        await cache.put("/product", cacheResponse);
-        console.log(
-          "✅ Product data saved to cache:",
-          products.length,
-          "items"
+        const imageCache = await caches.open("images-cache");
+
+        await Promise.all(
+          products.map(async (product) => {
+            const imageUrl = product.imageUrl;
+            if (imageUrl && typeof imageUrl === "string") {
+              try {
+                const imageRequest = new Request(imageUrl, {
+                  mode: "no-cors",
+                  cache: "no-store",
+                });
+                const imageResponse = await fetch(imageRequest);
+
+                if (imageResponse.ok || imageResponse.type === "opaque") {
+                  await imageCache.put(imageUrl, imageResponse.clone());
+                  console.log("🖼️ Gambar dicache:", imageUrl);
+                } else {
+                  console.warn("⚠️ Gagal ambil gambar:", imageUrl);
+                }
+              } catch (imgErr) {
+                console.error(
+                  "❌ Error saat caching gambar:",
+                  imageUrl,
+                  imgErr
+                );
+              }
+            }
+          })
         );
       } catch (err) {
-        console.error("❌ Error fetching products:", err);
+        console.error("❌ Error saat fetch produk:", err);
 
-        // ⚡ If offline, try fetching from cache
+        // 🌐 Offline fallback
         if (!navigator.onLine || err.message === "Network Error") {
-          console.log("⚡ Offline mode - Attempting to retrieve from cache...");
+          console.log("⚡ Offline - mencoba ambil data dari cache...");
           try {
             const cache = await caches.open("products-cache");
             const cachedResponse = await cache.match("/product");
@@ -70,27 +88,23 @@ export default function Homepage() {
               );
               const latestCache = sortedCache.slice(0, 4);
 
-              console.log(
-                "✅ Latest 4 products from cache:",
-                latestCache.length,
-                "items"
-              );
-
-              // Ensure data format is an array for UI rendering
               if (Array.isArray(cachedData)) {
                 setNewestProducts(latestCache);
-              } else {
                 console.log(
-                  "⚠️ Cached data is not an array, cannot render:",
-                  cachedData
+                  "📦 Produk dari cache:",
+                  latestCache.length,
+                  "items"
                 );
+              } else {
+                console.warn("⚠️ Data cache bukan array:", cachedData);
+                setNewestProducts([]);
               }
             } else {
-              console.log("❌ No data found in cache");
+              console.warn("📭 Tidak ada data produk di cache");
               setNewestProducts([]);
             }
           } catch (cacheErr) {
-            console.error("❌ Error accessing cache:", cacheErr);
+            console.error("❌ Error saat ambil dari cache:", cacheErr);
           }
         } else {
           setNewestProducts([]);
@@ -118,7 +132,7 @@ export default function Homepage() {
   const handleAddToCart = (product: Product) => {
     addToCart(product);
     console.log("Cart: ", product);
-    toast.success(`${product.name} added to the cart!`);
+    toast.success(`${product.name} berhasil ditambahkan ke keranjang.`);
   };
 
   return (
@@ -129,11 +143,11 @@ export default function Homepage() {
           <div className="grid gap-6 md:gap-8 lg:grid-cols-2 lg:gap-12 items-center">
             <div className="space-y-4 text-center lg:text-left">
               <h1 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl lg:text-5xl">
-                Everything Your Home Needs in One Place
+                Solusi Lengkap untuk Hunian Idaman.
               </h1>
               <p className="max-w-[600px] text-gray-500 text-sm md:text-base mx-auto lg:mx-0">
-                Premium quality furniture for your home. From stylish tables or
-                doors, all designed with care.
+                Furnitur berkualitas premium untuk hunian. Dari meja hingga
+                pintu bergaya, semuanya dirancang dengan penuh ketelitian.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link to={"/product"}>
@@ -163,7 +177,8 @@ export default function Homepage() {
               Newest Products
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto text-sm md:text-base">
-              Discover our latest collection of carefully curated products
+              Jelajahi pilihan produk terkini yang dirancang dengan penuh
+              perhatian.
             </p>
           </div>
 
@@ -180,7 +195,7 @@ export default function Homepage() {
                 {/* Product Image Container */}
                 <div className="relative aspect-square overflow-hidden bg-gray-50">
                   <img
-                    src={product.image || "/placeholder.svg"}
+                    src={product.image}
                     alt={product.name}
                     width={300}
                     height={300}
@@ -280,7 +295,7 @@ export default function Homepage() {
       <section className="bg-gray-50 py-8 md:py-12">
         <div className="container mx-auto px-4 md:px-6">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight text-center mb-6 md:mb-8">
-            Why Choose GM Candra Mebel
+            Kenapa GM Candra Mebel
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -290,8 +305,8 @@ export default function Homepage() {
                   Quality Guarantee
                 </h3>
                 <p className="text-xs md:text-sm text-gray-500">
-                  All our products are carefully selected for quality and
-                  durability.
+                  Setiap produk dipilih dengan cermat untuk kualitas dan
+                  ketahanan.
                 </p>
               </div>
             </div>
@@ -302,8 +317,7 @@ export default function Homepage() {
                   24/7 Support
                 </h3>
                 <p className="text-xs md:text-sm text-gray-500">
-                  Our customer service team is available around the clock to
-                  help you.
+                  Butuh bantuan? Kami selalu tersedia untukmu.
                 </p>
               </div>
             </div>
@@ -314,8 +328,7 @@ export default function Homepage() {
                   Secure Payment
                 </h3>
                 <p className="text-xs md:text-sm text-gray-500">
-                  Multiple secure payment options for your convenience and
-                  safety.
+                  Beragam metode pembayaran aman, demi kenyamanan transaksi.
                 </p>
               </div>
             </div>

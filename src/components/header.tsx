@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, User, Menu, X } from "lucide-react";
+import { ShoppingCart, User, Menu, X, Store } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import useAuthStore from "@/store/authStore";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const totalItems = useCartStore((state) =>
     state.items.reduce((total, item) => total + item.quantity, 0)
   );
-  
+
   const { isAuthenticated, userRole, logout } = useAuthStore();
-  
+
   const handleLogout = () => {
     logout();
-    toast.success('Logged out successfully');
+    toast.success("Logged out berhasil");
     setMobileMenuOpen(false);
   };
 
@@ -24,13 +24,9 @@ export default function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-4 md:gap-6 lg:gap-10">
           <Link to="/" className="flex items-center gap-2">
-            <img
-              src="/placeholder.svg?height=40&width=40"
-              alt="GM Candra Mebel Logo"
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
+            <div className="w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-red-100">
+              <Store className="w-6 h-6 text-red-500" />
+            </div>
             <span className="text-base md:text-lg lg:text-xl font-bold">
               GM Candra Mebel
             </span>
@@ -80,7 +76,7 @@ export default function Header() {
               </Link>
             )}
           </div>
-          
+
           <button className="p-2 rounded-full hover:bg-gray-100 transition-colors relative">
             <Link to="/cart">
               <ShoppingCart className="h-5 w-5" />
@@ -101,7 +97,7 @@ export default function Header() {
           </button>
         </div>
       </div>
-      
+
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
