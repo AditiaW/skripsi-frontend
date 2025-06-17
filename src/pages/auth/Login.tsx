@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { requestForToken } from "@/lib/firebase";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -35,9 +36,11 @@ const LoginPage = () => {
     setError("");
 
     try {
+      const fcmToken = await requestForToken();
       const { data: { token } } = await axiosInstance.post("/login", {
         email: values.email,
         password: values.password,
+        fcmToken: fcmToken,
       }, { timeout: 5000 });
 
       useAuthStore.getState().login(token);

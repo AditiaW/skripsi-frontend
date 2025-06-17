@@ -20,17 +20,97 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRoute from "./components/AuthRoute";
 import UnauthorizedPage from "./pages/auth/UnauthorizedPage";
 import VerifyEmail from "./pages/auth/VerifyEmail";
+import { useEffect } from "react";
+import { onMessage } from "firebase/messaging";
+import { messaging, requestForToken } from "./lib/firebase";
 
 const App = () => {
+  useEffect(() => {
+    const unsubscribe = onMessage(messaging, (payload) => {
+      console.log("Foreground message received:", payload);
+
+      const notificationTitle = payload.notification?.title || "New Message";
+      const notificationOptions = {
+        body: payload.notification?.body || "You have a new message!",
+        icon: "/shop.png",
+      };
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          if (navigator.serviceWorker.controller) {
+            registration.showNotification(
+              notificationTitle,
+              notificationOptions
+            );
+          } else {
+            console.warn(
+              "ServiceWorker controller not ready, notification skipped."
+            );
+          }
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // useEffect(() => {
+  //   const fetchToken = async () => {
+  //     try {
+  //       const token = await requestForToken();
+  //       console.log("Ini Tempat Tampung token terpisah: ", token)
+  //     } catch (error) {
+  //       console.error("Error getting FCM token:", error);
+  //     }
+  //   };
+
+  //   fetchToken();
+  // }, []);
+
   return (
     <BrowserRouter>
       <Routes>
         {/* Auth Routes - Users who are already logged in cannot access this page */}
-        <Route path="/login" element={<AuthRoute><Login /></AuthRoute>} />
-        <Route path="/register" element={<AuthRoute><Register /></AuthRoute>} />
-        <Route path="/forgot-password" element={<AuthRoute><ForgotPassword /></AuthRoute>} />
-        <Route path="/reset-password" element={<AuthRoute><ResetPassword /></AuthRoute>} />
-        <Route path="/verify-email" element={<AuthRoute><VerifyEmail /></AuthRoute>} />
+        <Route
+          path="/login"
+          element={
+            <AuthRoute>
+              <Login />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <AuthRoute>
+              <Register />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <AuthRoute>
+              <ForgotPassword />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <AuthRoute>
+              <ResetPassword />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path="/verify-email"
+          element={
+            <AuthRoute>
+              <VerifyEmail />
+            </AuthRoute>
+          }
+        />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         {/* Public Shop Routes */}
@@ -40,21 +120,21 @@ const App = () => {
         <Route path="/cart" element={<Cart />} />
 
         {/* Protected Checkout Routes */}
-        <Route 
-          path="/checkout" 
+        <Route
+          path="/checkout"
           element={
             <ProtectedRoute requireAuth>
               <Checkout />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/checkout/success" 
+        <Route
+          path="/checkout/success"
           element={
             <ProtectedRoute requireAuth>
               <CheckoutSuccess />
             </ProtectedRoute>
-          } 
+          }
         />
 
         {/* Admin Routes */}
