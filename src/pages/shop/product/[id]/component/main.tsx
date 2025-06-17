@@ -36,7 +36,7 @@ export default function ProductDetail() {
             setProduct(cachedData);
           } else {
             setError("Produk tidak tersedia di cache.");
-            console.warn("📭 Tidak ada cache untuk produk:", id);
+            console.warn("⚠️ Tidak ada cache untuk produk:", id);
           }
         } else {
           setError("Gagal memuat produk.");

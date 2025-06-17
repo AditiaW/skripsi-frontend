@@ -3,12 +3,12 @@ importScripts("https://www.gstatic.com/firebasejs/11.4.0/firebase-messaging-comp
 
 // 🔥 Inisialisasi Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyDKT7gynC_JqjGpZjaFZkLhH5m2-yrNHjk",
-  authDomain: "test-skripsi-3c259.firebaseapp.com",
-  projectId: "test-skripsi-3c259",
-  storageBucket: "test-skripsi-3c259.appspot.com",
-  messagingSenderId: "568182643466",
-  appId: "1:568182643466:web:67261c7b13de6ab0a2b8f3",
+  apiKey: "__FIREBASE_API_KEY__",
+  authDomain: "__FIREBASE_AUTH_DOMAIN__",
+  projectId: "__FIREBASE_PROJECT_ID__",
+  storageBucket: "__FIREBASE_STORAGE_BUCKET__",
+  messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
+  appId: "__FIREBASE_APP_ID__",
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -22,8 +22,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationOptions = {
     body: payload?.notification?.body || "You have a new message!",
     icon: "/shop.png",
-    requireInteraction: true, // Notifikasi tetap tampil sampai ditutup
-      tag: "push-notification", // Hindari duplikasi notifikasi
+    requireInteraction: true, 
+      tag: "push-notification", 
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);

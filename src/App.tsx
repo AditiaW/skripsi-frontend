@@ -22,7 +22,7 @@ import UnauthorizedPage from "./pages/auth/UnauthorizedPage";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import { useEffect } from "react";
 import { onMessage } from "firebase/messaging";
-import { messaging, requestForToken } from "./lib/firebase";
+import { messaging } from "./lib/firebase";
 
 const App = () => {
   useEffect(() => {
@@ -53,19 +53,6 @@ const App = () => {
 
     return () => unsubscribe();
   }, []);
-
-  // useEffect(() => {
-  //   const fetchToken = async () => {
-  //     try {
-  //       const token = await requestForToken();
-  //       console.log("Ini Tempat Tampung token terpisah: ", token)
-  //     } catch (error) {
-  //       console.error("Error getting FCM token:", error);
-  //     }
-  //   };
-
-  //   fetchToken();
-  // }, []);
 
   return (
     <BrowserRouter>

@@ -100,7 +100,7 @@ export default function Homepage() {
                 setNewestProducts([]);
               }
             } else {
-              console.warn("📭 Tidak ada data produk di cache");
+              console.warn("⚠️ Tidak ada data produk di cache");
               setNewestProducts([]);
             }
           } catch (cacheErr) {
