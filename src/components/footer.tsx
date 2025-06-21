@@ -111,7 +111,7 @@ export default function Footer() {
                   <circle cx="12" cy="10" r="3"></circle>
                 </svg>
                 <span className="text-sm text-gray-500">
-                  Jl. Komodor Yos Sudarso, Pontianak Barat, Pontianak 78113
+                  Jl. Komodor Yos Sudarso, Pontianak Barat, 78113
                 </span>
               </div>
             </div>
