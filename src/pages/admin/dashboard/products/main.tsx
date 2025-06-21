@@ -18,6 +18,7 @@ interface Product {
   price: number;
   quantity: number;
   image: string;
+  createdAt: Date;
   categoryId: string;
   category: {
     id: string;

@@ -45,6 +45,7 @@ interface Product {
   price: number;
   quantity: number;
   image: string;
+  createdAt: Date;
   categoryId: string;
   category: {
     id: string;
@@ -101,10 +102,15 @@ export function ProductTable({
     }
   };
 
+  // Sort products by createdAt (newest first)
+  const sortedProducts = [...products].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   const totalPages = Math.ceil(products.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedProducts = products.slice(indexOfFirstItem, indexOfLastItem);
+  const paginatedProducts = sortedProducts.slice(indexOfFirstItem, indexOfLastItem);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {

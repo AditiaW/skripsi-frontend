@@ -134,11 +134,16 @@ export function OrderTable({ orders, searchTerm }: OrderTableProps) {
     }
   };
 
+  // Sort orders by createdAt (newest first)
+  const sortedOrders = [...orders].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   // Pagination logic
   const totalPages = Math.ceil(orders.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedOrders = orders.slice(indexOfFirstItem, indexOfLastItem);
+  const paginatedOrders = sortedOrders.slice(indexOfFirstItem, indexOfLastItem);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {

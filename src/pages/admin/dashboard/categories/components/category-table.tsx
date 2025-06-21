@@ -102,11 +102,16 @@ export function CategoryTable({
     });
   };
 
+  // Sort categories by createdAt (newest first)
+  const sortedCategories = [...categories].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   // Pagination logic
   const totalPages = Math.ceil(categories.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedCategories = categories.slice(
+  const paginatedCategories = sortedCategories.slice(
     indexOfFirstItem,
     indexOfLastItem
   );

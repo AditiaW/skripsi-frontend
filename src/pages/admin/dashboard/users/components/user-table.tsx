@@ -118,11 +118,16 @@ export function UserTable({
     return text.substring(0, maxLength) + "...";
   };
 
+  // Sort users by createdAt (newest first)
+  const sortedUsers = [...users].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   // Pagination logic
   const totalPages = Math.ceil(users.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedUsers = users.slice(indexOfFirstItem, indexOfLastItem);
+  const paginatedUsers = sortedUsers.slice(indexOfFirstItem, indexOfLastItem);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
