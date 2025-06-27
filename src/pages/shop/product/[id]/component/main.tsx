@@ -19,24 +19,19 @@ export default function ProductDetail() {
       try {
         const response = await axiosInstance.get(`/product/${id}`);
         const productData = response.data;
-
-        if (productData) {
-          setProduct(productData);
-          await cacheProductData(id, productData);
-          preloadImage(productData);
-        }
+        setProduct(productData);
+        preloadImage(productData.image);
       } catch (err: any) {
         console.error("❌ Error fetching product:", err);
 
         if (!navigator.onLine || err.message === "Network Error") {
-          console.log("⚡ Offline - mencoba ambil data produk dari cache...");
-          const cachedData = await getCachedProduct(id);
-
-          if (cachedData) {
-            setProduct(cachedData);
+          console.log("⚡ Offline mode - ambil dari cache list...");
+          const cachedProduct = await getProductFromListCache(id);
+          if (cachedProduct) {
+            setProduct(cachedProduct);
+            preloadImage(cachedProduct.image);
           } else {
             setError("Produk tidak tersedia di cache.");
-            console.warn("⚠️ Tidak ada cache untuk produk:", id);
           }
         } else {
           setError("Gagal memuat produk.");
@@ -47,21 +42,19 @@ export default function ProductDetail() {
     fetchProduct();
   }, [id]);
 
-  const cacheProductData = async (id: string, product: Product) => {
-    const cache = await caches.open("products-cache");
-    const response = new Response(JSON.stringify(product), {
-      headers: { "Content-Type": "application/json" },
-    });
-    await cache.put(`/product/${id}`, response);
-  };
-
-  const getCachedProduct = async (id: string): Promise<Product | null> => {
+  const getProductFromListCache = async (
+    id: string
+  ): Promise<Product | null> => {
     try {
       const cache = await caches.open("products-cache");
-      const cachedResponse = await cache.match(`/product/${id}`);
-      return cachedResponse ? await cachedResponse.json() : null;
+      const cachedResponse = await cache.match("/product");
+      if (cachedResponse) {
+        const allProducts: Product[] = await cachedResponse.json();
+        return allProducts.find((p) => String(p.id) === id) ?? null;
+      }
+      return null;
     } catch (err) {
-      console.error("❌ Gagal akses cache:", err);
+      console.error("❌ Gagal akses cache list:", err);
       return null;
     }
   };
