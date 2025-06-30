@@ -37,17 +37,21 @@ export default function ShopPage() {
         const products = response.data;
 
         setProducts(products);
-
-        await cacheProductList(products);
-        await preloadProductImages(products);
-
         initFuseSearch(products);
+
+        // Cache produk dan gambar secara terpisah
+        await cacheProductList(products);
+        await cacheProductImages(products);
       } catch (err) {
         console.error("❌ Error saat fetch produk:", err);
 
         if (!navigator.onLine || err.message === "Network Error") {
           console.log("⚡ Offline - mencoba ambil data dari cache...");
-          const cachedProducts = await getCachedProducts();
+          const [cachedProducts] = await Promise.all([
+            getCachedProducts(),
+            checkImageCacheAvailability(),
+          ]);
+
           if (cachedProducts) {
             setProducts(cachedProducts);
             initFuseSearch(cachedProducts);
@@ -110,13 +114,56 @@ export default function ShopPage() {
     setFuse(new Fuse(data, options));
   };
 
-  const preloadProductImages = async (products: any[]) => {
-    products.forEach((p) => {
-      if (p.imageUrl) {
-        const img = new Image();
-        img.src = p.imageUrl;
-      }
-    });
+  const cacheProductImages = async (products: Product[]) => {
+    try {
+      const cache = await caches.open("images-cache");
+
+      await Promise.all(
+        products.map(async (product) => {
+          if (!product.image) return;
+
+          try {
+            // Cek apakah gambar sudah ada di cache
+            const cached = await cache.match(product.image);
+            if (cached) {
+              console.log(`🖼️ Gambar sudah di-cache: ${product.image}`);
+              return;
+            }
+
+            // Fetch gambar dengan timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout 5 detik
+
+            const imageResponse = await fetch(product.image, {
+              signal: controller.signal,
+              cache: "force-cache", // Gunakan cache browser jika ada
+            });
+
+            clearTimeout(timeoutId);
+
+            if (imageResponse.ok) {
+              await cache.put(product.image, imageResponse.clone());
+              console.log(`🖼️ Berhasil caching gambar: ${product.image}`);
+            }
+          } catch (imgErr) {
+            console.warn(`⚠️ Gagal caching gambar ${product.image}:`, imgErr);
+          }
+        })
+      );
+    } catch (err) {
+      console.error("❌ Error saat caching gambar:", err);
+    }
+  };
+
+  const checkImageCacheAvailability = async () => {
+    try {
+      const cache = await caches.open("images-cache");
+      const keys = await cache.keys();
+      return keys.length > 0;
+    } catch (err) {
+      console.error("❌ Error cek cache gambar:", err);
+      return false;
+    }
   };
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
@@ -184,7 +231,7 @@ export default function ShopPage() {
     } else if (sortOption === "price-high") {
       return b.price - a.price;
     } else if (sortOption === "newest") {
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }
     return 0;
   });

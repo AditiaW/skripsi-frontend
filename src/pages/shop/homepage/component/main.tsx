@@ -26,55 +26,64 @@ export default function Homepage() {
         const response = await axiosInstance.get("/product");
         const products = response.data;
 
+        // Sort and get newest products
         const sortedProducts = [...products].sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         const latestProducts = sortedProducts.slice(0, 4);
-
         setNewestProducts(latestProducts);
 
+        // Cache products data
         const productCache = await caches.open("products-cache");
         const productResponse = new Response(JSON.stringify(products), {
           headers: { "Content-Type": "application/json" },
         });
         await productCache.put("/product", productResponse);
 
+        // Cache images
         const imageCache = await caches.open("images-cache");
 
         await Promise.all(
           products.map(async (product) => {
             const imageUrl = product.imageUrl;
-            if (imageUrl && typeof imageUrl === "string") {
-              try {
-                const imageRequest = new Request(imageUrl, {
-                  mode: "no-cors",
-                  cache: "no-store",
-                });
-                const imageResponse = await fetch(imageRequest);
+            if (!imageUrl || typeof imageUrl !== "string") return;
 
-                if (imageResponse.ok || imageResponse.type === "opaque") {
-                  await imageCache.put(imageUrl, imageResponse.clone());
-                  console.log("🖼️ Gambar dicache:", imageUrl);
-                } else {
-                  console.warn("⚠️ Gagal ambil gambar:", imageUrl);
-                }
-              } catch (imgErr) {
-                console.error(
-                  "❌ Error saat caching gambar:",
+            try {
+              // Check if image already exists in cache
+              const cachedResponse = await imageCache.match(imageUrl);
+              if (cachedResponse) {
+                console.log("🖼️ Gambar sudah ada di cache:", imageUrl);
+                return;
+              }
+
+              // Fetch image 
+              const imageRequest = new Request(imageUrl);
+
+              const imageResponse = await fetch(imageRequest);
+
+              // Only cache if response is valid
+              if (imageResponse.ok) {
+                await imageCache.put(imageUrl, imageResponse.clone());
+                console.log("🖼️ Gambar berhasil di-cache:", imageUrl);
+              } else {
+                console.warn(
+                  "⚠️ Gagal fetch gambar:",
                   imageUrl,
-                  imgErr
+                  imageResponse.status
                 );
               }
+            } catch (imgErr) {
+              console.error("❌ Error caching gambar:", imageUrl, imgErr);
             }
           })
         );
       } catch (err) {
         console.error("❌ Error saat fetch produk:", err);
 
-        // 🌐 Offline fallback
+        // Offline fallback
         if (!navigator.onLine || err.message === "Network Error") {
-          console.log("⚡ Offline - mencoba ambil data dari cache...");
+          console.log("⚡ Mode offline - mencoba ambil dari cache...");
           try {
             const cache = await caches.open("products-cache");
             const cachedResponse = await cache.match("/product");
@@ -87,27 +96,12 @@ export default function Homepage() {
                   new Date(a.createdAt).getTime()
               );
               const latestCache = sortedCache.slice(0, 4);
-
-              if (Array.isArray(cachedData)) {
-                setNewestProducts(latestCache);
-                console.log(
-                  "📦 Produk dari cache:",
-                  latestCache.length,
-                  "items"
-                );
-              } else {
-                console.warn("⚠️ Data cache bukan array:", cachedData);
-                setNewestProducts([]);
-              }
-            } else {
-              console.warn("⚠️ Tidak ada data produk di cache");
-              setNewestProducts([]);
+              setNewestProducts(latestCache);
+              console.log("📦 Produk dari cache:", latestCache.length, "items");
             }
           } catch (cacheErr) {
             console.error("❌ Error saat ambil dari cache:", cacheErr);
           }
-        } else {
-          setNewestProducts([]);
         }
       }
     };
