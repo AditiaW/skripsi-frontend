@@ -331,7 +331,7 @@ export function ProductCreateDialog({
                               <div className="flex flex-col items-center gap-1 text-center">
                                 <ImagePlus className="h-8 w-8 text-muted-foreground" />
                                 <div className="text-sm text-muted-foreground">
-                                  Click to upload or drag and drop
+                                  Click to upload
                                 </div>
                               </div>
                             )}
