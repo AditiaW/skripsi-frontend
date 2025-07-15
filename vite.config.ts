@@ -68,7 +68,24 @@ export default defineConfig({
               networkTimeoutSeconds: 10,
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 30 * 24 * 60 * 60, 
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+
+          // 📂 Kategori Produk: Network First
+          {
+            urlPattern: /\/api\/categories/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'categories-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 hari
               },
               cacheableResponse: {
                 statuses: [0, 200],

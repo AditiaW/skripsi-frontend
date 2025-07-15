@@ -6,6 +6,7 @@ import { DashboardHeader } from "@/pages/admin/dashboard/components/header";
 import { DashboardShell } from "@/pages/admin/dashboard/components/shell";
 import { Input } from "@/components/ui/input";
 import { OrderTable } from "@/pages/admin/dashboard/orders/components/order-table";
+import toast from "react-hot-toast";
 
 interface Order {
   id: string;
@@ -46,6 +47,9 @@ export default function OrdersPage() {
     const options = {
       keys: [
         "id",
+        "shippingFirstName",
+        "shippingLastName",
+        "shippingEmail",
         "shippingAddress",
         "shippingCity",
         "paymentStatus",
@@ -83,6 +87,17 @@ export default function OrdersPage() {
     fetchData();
   }, []);
 
+  const handleDelete = async (orderId: string) => {
+    try {
+      await axiosInstance.delete(`/orders/${orderId}`);
+      setOrders((prev) => prev.filter((order) => order.id !== orderId));
+      toast.success("Order berhasil dihapus");
+    } catch (error) {
+      console.error("Gagal menghapus order:", error);
+      toast.error("Gagal menghapus order. Silakan coba lagi.");
+    }
+  };
+
   // Filter orders using Fuse.js
   const filteredOrders = useMemo(() => {
     if (!searchQuery) return orders;
@@ -115,7 +130,11 @@ export default function OrdersPage() {
             <p>Loading orders...</p>
           </div>
         ) : (
-          <OrderTable orders={filteredOrders} searchTerm={searchQuery} />
+          <OrderTable
+            orders={filteredOrders}
+            searchTerm={searchQuery}
+            onDelete={handleDelete}
+          />
         )}
       </div>
     </DashboardShell>

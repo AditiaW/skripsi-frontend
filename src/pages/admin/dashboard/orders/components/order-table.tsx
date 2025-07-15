@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, MoreHorizontal } from "lucide-react";
+import { Eye, MoreHorizontal, Trash } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Order {
   id: string;
@@ -60,21 +70,37 @@ interface Order {
 interface OrderTableProps {
   orders: Order[];
   searchTerm?: string;
+  onDelete: (id: string) => void;
 }
 
-export function OrderTable({ orders, searchTerm }: OrderTableProps) {
+export function OrderTable({ orders, searchTerm, onDelete }: OrderTableProps) {
   const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
   useEffect(() => {
-      setCurrentPage(1);
-    }, [searchTerm]);
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleView = (order: Order) => {
     setViewingOrder(order);
     setIsViewDialogOpen(true);
+  };
+
+  const handleDeleteClick = (orderId: string) => {
+    setOrderToDelete(orderId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (orderToDelete) {
+      onDelete(orderToDelete);
+      setIsDeleteDialogOpen(false);
+      setOrderToDelete(null);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -135,8 +161,8 @@ export function OrderTable({ orders, searchTerm }: OrderTableProps) {
   };
 
   // Sort orders by createdAt (newest first)
-  const sortedOrders = [...orders].sort((a, b) => 
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  const sortedOrders = [...orders].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   // Pagination logic
@@ -153,7 +179,7 @@ export function OrderTable({ orders, searchTerm }: OrderTableProps) {
 
   const getVisiblePages = () => {
     const visiblePages = [];
-    const maxVisiblePages = window.innerWidth < 640 ? 3 : 5; 
+    const maxVisiblePages = window.innerWidth < 640 ? 3 : 5;
 
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
@@ -225,15 +251,26 @@ export function OrderTable({ orders, searchTerm }: OrderTableProps) {
                       <div className="font-semibold text-sm">
                         {formatPrice(order.totalAmount)}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => handleView(order)}
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        <span className="sr-only">View Details</span>
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => handleView(order)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          <span className="sr-only">View Details</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                          onClick={() => handleDeleteClick(order.id)}
+                        >
+                          <Trash className="h-3.5 w-3.5" />
+                          <span className="sr-only">Delete Order</span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -326,6 +363,13 @@ export function OrderTable({ orders, searchTerm }: OrderTableProps) {
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteClick(order.id)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash className="mr-2 h-4 w-4 text-red-500" />
+                            Delete Order
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -399,6 +443,30 @@ export function OrderTable({ orders, searchTerm }: OrderTableProps) {
           onOpenChange={setIsViewDialogOpen}
         />
       )}
+
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              order and all its associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

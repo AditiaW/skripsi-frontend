@@ -22,6 +22,7 @@ export default function ShopPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const { addToCart } = useCartStore();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [fuse, setFuse] = useState<Fuse<Product> | null>(null);
 
@@ -31,40 +32,42 @@ export default function ShopPage() {
   const productsPerPage = 8;
 
   useEffect(() => {
-    const fetchAndCacheProducts = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axiosInstance.get("/product");
-        const products = response.data;
+        const categoriesResponse = await axiosInstance.get("/category");
+        setCategories(categoriesResponse.data);
+        await cacheCategoryList(categoriesResponse.data);
+
+        const productsResponse = await axiosInstance.get("/product");
+        const products = productsResponse.data;
 
         setProducts(products);
         initFuseSearch(products);
 
-        // Cache produk dan gambar secara terpisah
         await cacheProductList(products);
         await cacheProductImages(products);
       } catch (err) {
-        console.error("❌ Error saat fetch produk:", err);
+        console.error("❌ Error fetching data:", err);
 
         if (!navigator.onLine || err.message === "Network Error") {
-          console.log("⚡ Offline - mencoba ambil data dari cache...");
-          const [cachedProducts] = await Promise.all([
+          console.log("⚡ Offline - trying to get data from cache...");
+          const [cachedProducts, cachedCategories] = await Promise.all([
             getCachedProducts(),
+            getCachedCategories(),
             checkImageCacheAvailability(),
           ]);
 
+          if (cachedProducts) setProducts(cachedProducts);
+          if (cachedCategories) setCategories(cachedCategories);
+          
           if (cachedProducts) {
-            setProducts(cachedProducts);
             initFuseSearch(cachedProducts);
-          } else {
-            setProducts([]);
           }
-        } else {
-          setProducts([]);
         }
       }
     };
 
-    fetchAndCacheProducts();
+    fetchData();
 
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -81,7 +84,7 @@ export default function ShopPage() {
     };
   }, []);
 
-  const cacheProductList = async (products: any[]) => {
+  const cacheProductList = async (products: Product[]) => {
     const cache = await caches.open("products-cache");
     const response = new Response(JSON.stringify(products), {
       headers: { "Content-Type": "application/json" },
@@ -95,16 +98,39 @@ export default function ShopPage() {
       const response = await cache.match("/product");
       if (response) {
         const data = await response.json();
-        console.log("📦 Data dari cache:", data.length, "items");
+        console.log("📦 Products from cache:", data.length, "items");
         return Array.isArray(data) ? data : [];
       }
     } catch (err) {
-      console.error("❌ Gagal ambil dari cache:", err);
+      console.error("❌ Failed to get products from cache:", err);
     }
     return null;
   };
 
-  const initFuseSearch = (data: any[]) => {
+  const cacheCategoryList = async (categories: Category[]) => {
+    const cache = await caches.open("categories-cache");
+    const response = new Response(JSON.stringify(categories), {
+      headers: { "Content-Type": "application/json" },
+    });
+    await cache.put("/category", response);
+  };
+
+  const getCachedCategories = async () => {
+    try {
+      const cache = await caches.open("categories-cache");
+      const response = await cache.match("/category");
+      if (response) {
+        const data = await response.json();
+        console.log("📦 Categories from cache:", data.length, "items");
+        return Array.isArray(data) ? data : [];
+      }
+    } catch (err) {
+      console.error("❌ Failed to get categories from cache:", err);
+    }
+    return null;
+  };
+
+  const initFuseSearch = (data: Product[]) => {
     const options = {
       keys: ["name", "category.name", "description"],
       includeScore: true,
@@ -123,35 +149,33 @@ export default function ShopPage() {
           if (!product.image) return;
 
           try {
-            // Cek apakah gambar sudah ada di cache
             const cached = await cache.match(product.image);
             if (cached) {
-              console.log(`🖼️ Gambar sudah di-cache: ${product.image}`);
+              console.log(`🖼️ Image already cached: ${product.image}`);
               return;
             }
 
-            // Fetch gambar dengan timeout
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout 5 detik
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
 
             const imageResponse = await fetch(product.image, {
               signal: controller.signal,
-              cache: "force-cache", // Gunakan cache browser jika ada
+              cache: "force-cache",
             });
 
             clearTimeout(timeoutId);
 
             if (imageResponse.ok) {
               await cache.put(product.image, imageResponse.clone());
-              console.log(`🖼️ Berhasil caching gambar: ${product.image}`);
+              console.log(`🖼️ Successfully cached image: ${product.image}`);
             }
           } catch (imgErr) {
-            console.warn(`⚠️ Gagal caching gambar ${product.image}:`, imgErr);
+            console.warn(`⚠️ Failed to cache image ${product.image}:`, imgErr);
           }
         })
       );
     } catch (err) {
-      console.error("❌ Error saat caching gambar:", err);
+      console.error("❌ Error caching images:", err);
     }
   };
 
@@ -161,7 +185,7 @@ export default function ShopPage() {
       const keys = await cache.keys();
       return keys.length > 0;
     } catch (err) {
-      console.error("❌ Error cek cache gambar:", err);
+      console.error("❌ Error checking image cache:", err);
       return false;
     }
   };
@@ -171,13 +195,6 @@ export default function ShopPage() {
     addToCart(product);
     toast.success(`${product.name} berhasil ditambahkan ke keranjang.`);
   };
-
-  const uniqueCategories = products.reduce((acc: Category[], product) => {
-    if (!acc.find((category) => category.id === product.category.id)) {
-      acc.push(product.category);
-    }
-    return acc;
-  }, []);
 
   const toggleCategory = (category: Category) => {
     setSelectedCategories((prev) => {
@@ -206,7 +223,6 @@ export default function ShopPage() {
   const getFilteredProducts = () => {
     let result = products;
 
-    // Apply Fuse.js search if search query exists
     if (searchQuery && fuse) {
       const searchResults = fuse.search(searchQuery);
       result = searchResults.map((item) => item.item);
@@ -305,7 +321,7 @@ export default function ShopPage() {
           </div>
 
           <div className="space-y-3 max-h-64 overflow-y-auto">
-            {uniqueCategories.map((category) => (
+            {categories.map((category) => (
               <label
                 key={category.id}
                 htmlFor={`category-${category.id}-desktop`}
@@ -338,6 +354,9 @@ export default function ShopPage() {
                 <span className="text-sm text-gray-700 group-hover:text-gray-900 font-medium select-none">
                   {category.name}
                 </span>
+                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+                  {products.filter((p) => p.category.id === category.id).length}
+                </div>
               </label>
             ))}
           </div>
@@ -434,7 +453,6 @@ export default function ShopPage() {
               onClick={() => setMobileFiltersOpen(false)}
             ></div>
             <div className="fixed inset-y-0 left-0 w-full max-w-sm bg-white shadow-2xl overflow-y-auto">
-              {/* Header with gradient */}
               <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -452,9 +470,7 @@ export default function ShopPage() {
                 </div>
               </div>
 
-              {/* Content */}
               <div className="p-6 space-y-6">
-                {/* Categories Section */}
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
@@ -501,7 +517,7 @@ export default function ShopPage() {
                   </div>
 
                   <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {uniqueCategories.map((category) => (
+                    {categories.map((category) => (
                       <label
                         key={category.id}
                         className="group flex items-center space-x-3 cursor-pointer hover:bg-white rounded-lg p-3 transition-all duration-200 border border-transparent hover:border-gray-200"
@@ -546,7 +562,6 @@ export default function ShopPage() {
                   </div>
                 </div>
 
-                {/* Active Filters */}
                 {selectedCategories.length > 0 && (
                   <div className="bg-red-50 rounded-xl p-4 border border-red-100">
                     <div className="flex items-center mb-3">
@@ -588,7 +603,6 @@ export default function ShopPage() {
                   </div>
                 )}
 
-                {/* Summary Stats */}
                 <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
@@ -616,7 +630,6 @@ export default function ShopPage() {
                 </div>
               </div>
 
-              {/* Footer Actions */}
               <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 space-y-3">
                 <button
                   onClick={() => setMobileFiltersOpen(false)}
