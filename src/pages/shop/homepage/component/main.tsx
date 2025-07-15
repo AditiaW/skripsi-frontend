@@ -57,7 +57,7 @@ export default function Homepage() {
                 return;
               }
 
-              // Fetch image 
+              // Fetch image
               const imageRequest = new Request(imageUrl);
 
               const imageResponse = await fetch(imageRequest);
@@ -124,6 +124,12 @@ export default function Homepage() {
   };
 
   const handleAddToCart = (product: Product) => {
+    // Check stock before adding to cart
+    if (product.quantity === 0) {
+      toast.error("Produk ini sudah habis stoknya");
+      return;
+    }
+
     addToCart(product);
     console.log("Cart: ", product);
     toast.success(`${product.name} berhasil ditambahkan ke keranjang.`);
@@ -215,10 +221,15 @@ export default function Homepage() {
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 translate-y-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 z-10">
                     <button
                       onClick={() => handleAddToCart(product)}
-                      className="inline-flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 active:bg-red-700 px-4 py-2.5 md:px-6 md:py-3 text-sm md:text-base font-medium text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 backdrop-blur-sm"
+                      disabled={product.quantity === 0}
+                      className={`inline-flex items-center justify-center rounded-full px-4 py-2.5 md:px-6 md:py-3 text-sm md:text-base font-medium text-white shadow-lg hover:shadow-xl transform transition-all duration-200 backdrop-blur-sm ${
+                        product.quantity === 0
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-red-500 hover:bg-red-600 active:bg-red-700 hover:scale-105"
+                      }`}
                     >
                       <ShoppingCart className="mr-2 h-4 w-4" />
-                      Add to Cart
+                      {product.quantity === 0 ? "Out of Stock" : "Add to Cart"}
                     </button>
                   </div>
 
@@ -228,6 +239,15 @@ export default function Homepage() {
                       New
                     </span>
                   </div>
+
+                  {/* Out of Stock Badge */}
+                  {product.quantity === 0 && (
+                    <div className="absolute top-3 left-3 z-30">
+                      <span className="inline-block px-2.5 py-1 text-xs font-semibold bg-gray-800 text-white rounded-full shadow-sm">
+                        Out of Stock
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Product Info */}
@@ -252,11 +272,18 @@ export default function Homepage() {
                   </div>
 
                   {/* Stock Quantity */}
-                  {product.quantity !== undefined && (
-                    <div className="text-xs text-gray-500">
-                      Stock: {product.quantity}
-                    </div>
-                  )}
+                  <div className="text-xs">
+                    <span
+                      className={`${
+                        product.quantity === 0
+                          ? "text-red-500 font-medium"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      Stock:{" "}
+                      {product.quantity === 0 ? "Habis" : product.quantity}
+                    </span>
+                  </div>
 
                   {/* View Details Button */}
                   <div className="pt-2">

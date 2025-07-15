@@ -159,8 +159,16 @@ export default function ProductDetail() {
 
           <div className="border-t border-b py-4">
             <p className="text-gray-700">{product.description}</p>
-            <p className="mt-2 text-sm text-gray-500">
-              Available stock: {product.quantity}
+            <p
+              className={`mt-2 text-sm ${
+                product.quantity === 0
+                  ? "text-red-500 font-medium"
+                  : "text-gray-500"
+              }`}
+            >
+              {product.quantity === 0
+                ? "Out of Stock"
+                : `Available stock: ${product.quantity}`}
             </p>
           </div>
 
@@ -180,7 +188,9 @@ export default function ProductDetail() {
                 <button
                   onClick={incrementQuantity}
                   className="w-10 h-10 flex items-center justify-center text-gray-600 hover:text-red-500 disabled:opacity-50 touch-manipulation"
-                  disabled={quantity >= product.quantity}
+                  disabled={
+                    quantity >= product.quantity || product.quantity === 0
+                  }
                   aria-label="Increase quantity"
                 >
                   <Plus className="h-4 w-4" />
@@ -191,6 +201,7 @@ export default function ProductDetail() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleAddToCart}
+                disabled={product.quantity === 0}
                 className="flex-1 inline-flex items-center justify-center rounded-md bg-red-500 px-4 py-3 text-sm font-medium text-white shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
               >
                 <ShoppingCart className="mr-2 h-5 w-5" />

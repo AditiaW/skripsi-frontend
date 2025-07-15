@@ -59,7 +59,7 @@ export default function ShopPage() {
 
           if (cachedProducts) setProducts(cachedProducts);
           if (cachedCategories) setCategories(cachedCategories);
-          
+
           if (cachedProducts) {
             initFuseSearch(cachedProducts);
           }
@@ -192,6 +192,10 @@ export default function ShopPage() {
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
+    if (product.quantity === 0) {
+      toast.error(`${product.name} is out of stock!`);
+      return;
+    }
     addToCart(product);
     toast.success(`${product.name} berhasil ditambahkan ke keranjang.`);
   };
@@ -781,7 +785,9 @@ export default function ShopPage() {
                         onClick={(e) => handleAddToCart(e, product)}
                       >
                         <ShoppingCart className="mr-2 h-4 w-4" />
-                        Add to Cart
+                        {product.quantity === 0
+                          ? "Out of Stock"
+                          : "Add to Cart"}
                       </button>
                     </div>
                   </div>

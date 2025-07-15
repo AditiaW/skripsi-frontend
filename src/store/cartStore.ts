@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Product } from '@/types';
+import toast from 'react-hot-toast';
 
 interface CartItem extends Product {
   quantity: number;
@@ -20,7 +21,12 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
-      addToCart: (product, quantity = 1) =>
+      addToCart: (product, quantity = 1) => {
+        if (product.quantity === 0) {
+          toast.error('Produk ini sudah habis stoknya');
+          return;
+        }
+
         set((state) => {
           const existingItem = state.items.find((item) => item.id === product.id);
 
@@ -28,6 +34,7 @@ export const useCartStore = create<CartState>()(
             const newQuantity = existingItem.quantity + quantity;
 
             if (newQuantity > product.quantity) {
+              toast.error(`Tidak bisa menambahkan lebih dari stok yang tersedia (${product.quantity})`);
               return {
                 items: state.items.map((item) =>
                   item.id === product.id
@@ -50,7 +57,8 @@ export const useCartStore = create<CartState>()(
           return {
             items: [...state.items, { ...product, quantity: limitedQuantity }],
           };
-        }),
+        });
+      },
       removeItem: (id) =>
         set((state) => ({
           items: state.items.filter((item) => item.id !== id),
